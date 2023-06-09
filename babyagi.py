@@ -659,6 +659,7 @@ def main():
                 "\033[0m\033[0m")
 
                 is_next_plan = False
+                is_complete = False
                 while True:
 
                     result = execution_command(OBJECTIVE, task['content'], tasks_storage.get_tasks(),
@@ -675,6 +676,10 @@ def main():
                     if len(executed_tasks_storage.get_tasks()) > 30:
                         executed_tasks_storage.pop()
 
+                    if result == "BabyCommandAGI: Complete":
+                        is_complete = True
+                        break
+
                     if result != "The Return Code for the command is 0:\n":
                         break
 
@@ -690,6 +695,8 @@ def main():
 
                 log("\033[32m\033[1m" + "*****TASK RESULT*****\n\n" + "\033[0m\033[0m")
 
+                if is_complete:
+                    break
                 if is_next_plan:
                     continue
 

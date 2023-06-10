@@ -6,7 +6,11 @@
 
 # Objective
 
-This Python script is an example of a system in which AI executes commands while planning. This system uses OpenAI's GPT-4 or higher to plan task creation and command execution. The main idea of this system is to see what happens when you combine the ability of AI to plan, like [BabyAGI](https://github.com/yoheinakajima/babyagi), with the CLI, a computer interaction system older than GUI. The idea comes from the possibility that LLM may be compatible with CLI. The part that was the thinking part of [BabyAGI](https://github.com/yoheinakajima/babyagi) has been greatly simplified for efficient command execution. (We may change this in the future)
+BabyCommandAGI is designed to test what happens when you combine CLI and LLM, which are older computer interaction interfaces than GUI. Those who are not familiar with computers may not know, but CLI is an old computer interaction interface. Even now, many computer operations can be done through CLI (common Linux servers mainly use CLI). Imagine LLM and CLI having a conversation. It's exciting to think about what could happen. I hope you will all try it out and find new use cases.
+
+This system is recommended to be run with an API of GPT-4 or higher.
+
+This Python script system is based on [BabyAGI](https://github.com/yoheinakajima/babyagi). However, the part that was the thinking part of [BabyAGI](https://github.com/yoheinakajima/babyagi) has been greatly simplified in order to execute commands efficiently. (This may change later)
 
 # Mechanism
 

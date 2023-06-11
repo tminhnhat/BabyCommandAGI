@@ -94,6 +94,6 @@ BabyCommandAGI はまだ初期段階にあり、その方向性とそこに到�
 </p>
 
 <p align="center">
-<!-- sponsors --><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/azuss-p"><img src="https://github.com/azuss-p.png" width="60px" alt="" /></a><!-- sponsors -->
 </p>
 

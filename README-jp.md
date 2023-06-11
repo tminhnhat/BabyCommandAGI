@@ -86,7 +86,7 @@ BabyCommandAGI はまだ初期段階にあり、その方向性とそこに到�
 (きっとこれからもつまらないアイディアをいっぱい出すと思います)
 
 <h1 align="center">
-  ✨ GitHub Sponsors BabyCommandAGI ✨
+  ✨ BabyCommandAGIのGitHub Sponsors ✨
 </h1>
 
 <p align="center">

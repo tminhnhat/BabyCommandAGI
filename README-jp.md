@@ -85,8 +85,14 @@ BabyCommandAGI はまだ初期段階にあり、その方向性とそこに到�
 私は未熟者であり、英語も話せませんし、日本以外の文化をほぼ知らないです。但し、自分のアイディアを大事にしているし、多くの人の役に立つと良いとも考えています。
 (きっとこれからもつまらないアイディアをいっぱい出すと思います)
 
-# Sponsors
+<h1 align="center">
+  ✨ GitHub Sponsors BabyCommandAGI ✨
+</h1>
 
-These are our really cool sponsors!
+<p align="center">
+ このプロジェクトの維持は、すべての下記スポンサーのおかげで可能になっています。このプロジェクトのスポンサーとなり、あなたのアバターのロゴを下に表示したい場合は、<a href="https://github.com/sponsors/saten-private">ここ</a> をクリックしてください。💖 5$でスポンサーになることができます。
+</p>
 
+<p align="center">
 <!-- sponsors --><!-- sponsors -->
+</p>

@@ -83,3 +83,13 @@ Note from @saten-private (May 21, 2023):
 I am not used to contributing to open source. I work another job during the day and I don't know if I can check PRs and issues frequently. However, I cherish this idea and hope it will be useful for everyone. Please feel free to let me know if there's anything. I am looking forward to learning a lot from you all.
 I am a novice, I cannot speak English, and I barely know cultures outside of Japan. However, I cherish my ideas, and I hope they will be of use to many people.
 (I'm sure I will continue to come up with many boring ideas in the future)
+
+<h1 align="center">
+  ✨ BabyCommandAGI's GitHub Sponsors ✨
+</h1>
+<p align="center">
+  The maintenance of this project is made possible thanks to all of the following sponsors. If you'd like to become a sponsor and have your avatar logo displayed below, please <a href="https://github.com/sponsors/saten-private">click here</a>. 💖 You can become a sponsor for $5.
+</p>
+<p align="center">
+<!-- sponsors --><!-- sponsors -->
+</p>

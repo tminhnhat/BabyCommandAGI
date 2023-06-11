@@ -349,7 +349,7 @@ def openai_call(
             break
 
 def task_creation_agent(
-        objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque
+        objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
     prompt = f"""You are an AI that manages tasks to achieve the desired "{objective}" based on the results of the last plan you created. Remove the tasks you've executed and create new tasks if necessary. Please make the tasks you generate executable in a terminal with a single command, if possible. If that's difficult, generate planned tasks with reduced granularity.
 
@@ -392,7 +392,10 @@ The following is the execution result of the last planned task.
 {json.dumps(list(task_list))}"""
 
     prompt = prompt[:MAX_STRING_LENGTH]
-    prompt += """
+    prompt += f"""
+
+# Current directory
+{current_dir}
 
 # Absolute Rule
 Please never output anything other than a JSON array."""
@@ -411,7 +414,7 @@ Please never output anything other than a JSON array."""
         return task_creation_agent(objective, result, task_description, task_list, executed_task_list)
 
 def check_completion_agent(
-        objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque
+        objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
     prompt = f"""You are an AI that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please generate tasks that can be executed in a terminal with one command as much as possible when necessary. If that is difficult, generate planned tasks with reduced granularity.
 
@@ -442,6 +445,9 @@ If the objective is not achieved based on the results, remove the executed tasks
     prompt += f"""          
 
 Below is the result of the last execution.
+
+# Current directory
+{current_dir}
 
 # Command executed most recently
 {task_description}
@@ -477,7 +483,7 @@ If the output is anything other than "Complete", please never output anything ot
         return check_completion_agent(objective, result, task_description, task_list, executed_task_list)
 
 def plan_agent(objective: str, task: str,
-               executed_task_list: deque) -> str:
+               executed_task_list: deque, current_dir: str) -> str:
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a Lead Engineer.
 You will perform one task based on the following objectives
@@ -487,6 +493,9 @@ You will perform one task based on the following objectives
 
 # Task to be performed.
 {task}
+
+# Current directory
+{current_dir}
 
 # List of most recently executed command results
 {json.dumps(list(executed_task_list))}"""
@@ -501,7 +510,7 @@ You will perform one task based on the following objectives
 
 # Execute a task based on the objective and five previous tasks
 def execution_command(objective: str, command: str, task_list: deque,
-                      executed_task_list: deque) -> str:
+                      executed_task_list: deque, current_dir: str) -> str:
     #[Test]
     #command = "export PATH=$PATH:$PWD/flutter/bin"
 
@@ -518,11 +527,6 @@ def execution_command(objective: str, command: str, task_list: deque,
                 #log(f"new environment:{value.strip()}")
                 os.environ[name] = value.strip()  # Set the environment variable in the parent process
                 #log(f"set environment:{os.environ[name]}")
-
-    current_dir = "."
-    if os.path.isfile(PWD_FILE):
-        with open(PWD_FILE, "r") as pwd_file:
-            current_dir = pwd_file.read().strip()
 
     log(f"current_dir:\n{current_dir}\n")
 
@@ -596,7 +600,7 @@ def execution_command(objective: str, command: str, task_list: deque,
 
 def user_input_for_waiting(objective: str, lastlines: str, command: str,
                            all_output_for_command: str, task_list: deque,
-                           executed_task_list: deque):
+                           executed_task_list: deque, current_dir: str) -> str:
     prompt = f"""You are an expert in shell commands to achieve the "{objective}".
 Based on the information below, if the objective has been achieved, please output only 'BabyCommandAGI: Complete'.
 Based on the information below, if the objective cannot be achieved and it seems that the objective can be achieved by inputting while waiting for the user's input, please output only the input content for the waiting input content to achieve the objective.
@@ -614,6 +618,9 @@ Otherwise, please output only 'BabyCommandAGI: Continue'.
 
     prompt = prompt[:MAX_STRING_LENGTH]
     prompt += f"""
+
+# Current directory
+{current_dir}
 
 # Command being executed
 {command}
@@ -643,6 +650,11 @@ if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
     tasks_storage.append(initial_task)
 
 def main():
+    current_dir = BABY_COMMAND_AGI_FOLDER
+    if os.path.isfile(PWD_FILE):
+        with open(PWD_FILE, "r") as pwd_file:
+            current_dir = pwd_file.read().strip()
+
     loop = True
     new_tasks_list = []
     while loop:
@@ -663,7 +675,10 @@ def main():
                 while True:
 
                     result = execution_command(OBJECTIVE, task['content'], tasks_storage.get_tasks(),
-                                    executed_tasks_storage.get_tasks())
+                                    executed_tasks_storage.get_tasks(), current_dir)
+                    if os.path.isfile(PWD_FILE):
+                        with open(PWD_FILE, "r") as pwd_file:
+                            current_dir = pwd_file.read().strip()
                     
 
                     # Step 2: Enrich result and store
@@ -703,7 +718,7 @@ def main():
                 # Step 3: Create new tasks and reprioritize task list
                 new_tasks_list = check_completion_agent(OBJECTIVE, result,
                                                      task['content'], tasks_storage.get_tasks(),
-                                                     executed_tasks_storage.get_tasks())
+                                                     executed_tasks_storage.get_tasks(), current_dir)
                 
                 if new_tasks_list == "Complete":
                     log("\033[92m\033[1m" + "*****TASK COMPLETE*****\n\n" +
@@ -712,14 +727,14 @@ def main():
 
             else:
                 log("\033[33m\033[1m" + "*****PLAN TASK*****\n\n" + "\033[0m\033[0m")
-                result = plan_agent(OBJECTIVE, task['content'], executed_tasks_storage.get_tasks())
+                result = plan_agent(OBJECTIVE, task['content'], executed_tasks_storage.get_tasks(), current_dir)
 
                 # Send to execution function to complete the task based on the context
                 log("\033[32m\033[1m" + "*****TASK RESULT*****\n\n" + "\033[0m\033[0m")
 
                 # Step 3: Create new tasks and reprioritize task list
                 new_tasks_list = task_creation_agent(OBJECTIVE, result, task['content'],
-                                              tasks_storage.get_tasks(), executed_tasks_storage.get_tasks())
+                                              tasks_storage.get_tasks(), executed_tasks_storage.get_tasks(), current_dir)
                 
         tasks_storage.replace(deque(new_tasks_list))
         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)

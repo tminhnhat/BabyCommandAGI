@@ -552,18 +552,47 @@ def execution_command(objective: str, command: str, task_list: deque,
     while process.poll() is None:
 
         # Check for output with a timeout of some minutes
-        reads, _, _ = select.select([pty_master], [], [], 300)
-        if reads:
-            for read in reads:
-                try:
-                    output_block = os.read(read, 1024).decode()
-                except OSError:
-                    # Break the loop if OSError occurs
-                    break
+        rlist, wlist, xlist = select.select([pty_master], [], [], 300)
+        if rlist or wlist or xlist:
+            if rlist:
+                for read in rlist:
+                    try:
+                        output_block = os.read(read, 1024).decode()
+                    except OSError:
+                        # Break the loop if OSError occurs
+                        log("\nOSError rlist\n\n")
+                        break
 
-                if output_block:
-                    print(output_block, end="")
-                    std_blocks.append(output_block)
+                    if output_block:
+                        print(output_block, end="")
+                        std_blocks.append(output_block)
+
+            if wlist:
+                for read in wlist:
+                    try:
+                        output_block = os.read(read, 1024).decode()
+                    except OSError:
+                        # Break the loop if OSError occurs
+                        log("\nOSError wlist\n\n")
+                        break
+
+                    if output_block:
+                        print(output_block, end="")
+                        std_blocks.append(output_block)
+
+            if xlist:
+                for read in xlist:
+                    try:
+                        output_block = os.read(read, 1024).decode()
+                    except OSError:
+                        # Break the loop if OSError occurs
+                        log("\nOSError xlist\n\n")
+                        break
+
+                    if output_block:
+                        print(output_block, end="")
+                        std_blocks.append(output_block)
+
         else:
             if USER_INPUT_LLM:
                 # Concatenate the output and split it by lines

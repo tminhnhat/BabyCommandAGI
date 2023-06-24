@@ -19,8 +19,10 @@ import openai
 import tiktoken as tiktoken
 import re
 import json
+from task_parser import TaskParser
 
 #[Test]
+#TaskParser().test()
 #while True:
 #    time.sleep(100)
 
@@ -129,8 +131,10 @@ assert INITIAL_TASK, "\033[91m\033[1m" + "INITIAL_TASK environment variable is m
 
 # Save and load functions for task_list and executed_task_list
 def save_data(data, filename):
-  with open(filename, 'wb') as f:
-    pickle.dump(data, f)
+  # TODO: Temporarily disable the save function because it is not ready.
+  pass
+  #with open(filename, 'wb') as f:
+  #  pickle.dump(data, f)
 
 def load_data(filename):
   if os.path.exists(filename):
@@ -351,31 +355,9 @@ def openai_call(
 def task_creation_agent(
         objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
-    prompt = f"""You are an AI that manages tasks to achieve the desired "{objective}" based on the results of the last plan you created. Remove the tasks you've executed and create new tasks if necessary. Please make the tasks you generate executable in a terminal with a single command, if possible. If that's difficult, generate planned tasks with reduced granularity.
+    prompt = f"""You are an AI that manages tasks to achieve the desired "{objective}" based on the results of the last plan you created. Remove the tasks you've executed and create new tasks if necessary. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
 
-Afterwards, organize the tasks, remove any unnecessary tasks for the objective, and output them as a JSON array following the example below. Please never output anything other than a JSON array.
-
-# Example of JSON array output"""
-    prompt += """
-[
-    {
-        "type": "command",
-        "content": "echo 'import os\\n# HOW TO USE*\\n# 1. Fork this into a private Repl\\n# 2. Add your OpenAI API Key and Pinecone API Key\\n# 4. Update the OBJECTIVE variable\\n# 5. Press \\"Run\\" at the top.\\n# NOTE: the first time you run, it will initiate the table first - which may take a few minutes, you'\\\\''ll be waiting at the initial OBJECTIVE phase. If it fails, try again.)\\n#\\n# WARNING: THIS CODE WILL KEEP RUNNING UNTIL YOU STOP IT. BE MINDFUL OF OPENAI API BILLS. DELETE PINECONE INDEX AFTER USE.\\n\\nimport subprocess\\nimport openai\\n#import pinecone\\nimport time\\nimport json\\nfrom collections import deque\\nfrom typing import Dict, List\\n\\n#Set API Keys\\nOPENAI_API_KEY = os.environ['\\\\''OPEN_API_KEY'\\\\'']\\n#PINECONE_API_KEY = os.environ['\\\\''PINECONE_API_KEY'\\\\'']\\n#PINECONE_ENVIRONMENT = os.environ['\\\\''PINECONE_ENVIRONMENT'\\\\''] #Pinecone Environment (eg. \\"us-east1-gcp\\")\\n\\n#Set Variables\\nYOUR_TABLE_NAME = \\"test-table\\"\\nOBJECTIVE = \\"Implement a game of Minesweeper in python and run it in python.\\"\\nYOUR_FIRST_TASK = \\"Develop a task list.\\"\\n\\nMODEL = \\"gpt-4\\"\\nMAX_TOKEN = 7000\\n\\n#Print OBJECTIVE\\nprint(\\"\\\\033[96m\\\\033[1m\\" + \\"OBJECTIVE\\\\n\\\\n\\" + \\"\\\\033[0m\\\\033[0m\\")\\nprint(OBJECTIVE + \\"\\\\n\\\\n\\")\\n\\n# Configure OpenAI and Pinecone\\nopenai.api_key = OPENAI_API_KEY\\n#pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)\\n\\n# Create Pinecone index\\n#table_name = YOUR_TABLE_NAME' > ./output/sample.py"
-    },
-    {
-        "type": "plan",
-        "content": "Develop a task list."
-    },
-    {
-        "type": "command",
-        "content": "cd /dir1/dir2/"
-    },
-    {
-        "type": "command",
-        "content": "mkdir ./dir3/dir4"
-    }
-]"""
-    prompt += f"""
+Afterwards, organize the tasks, remove any unnecessary tasks for the objective, and output them as a format following the "Example of tasks output" below. Please never output anything other than a "Example of tasks output" format.
 
 The following is the execution result of the last planned task.
 
@@ -385,28 +367,72 @@ The following is the execution result of the last planned task.
 # Result of the last executed planned task.
 {result}
 
-# List of most recently executed command results
+# List of most recently executed results
 {json.dumps(list(executed_task_list))}
 
 # Uncompleted tasks
-{json.dumps(list(task_list))}"""
+{TaskParser().encode(task_list)}"""
 
     prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
 # Current directory
 {current_dir}
 
+# Example of tasks output
+type: write
+path: /app/requirements.txt
+```
+dataclasses
+```
+type: command
+path: /app/
+```bash
+pip install -r requirements.txt
+source venv/bin/activate
+```
+type: plan
+```
+Designing a Minesweeper.
+```
+type: write
+path: /app/minesweeper.py
+```python
+from board import Board
+
+class Minesweeper:
+    def __init__(self, rows: int, cols: int, mines: int):
+        self.board = Board(rows, cols, mines)
+
+    def start_game(self):
+        game_over = False
+
+        while not game_over:
+            self.display_board()
+            row, col, action = self.play_turn()
+            if action == "R":
+                game_over = self.board.reveal_cell(row, col)
+            elif action == "F":
+                self.board.flag_cell(row, col)
+
+            if self.board.is_game_over():
+                break
+
+        self.display_board()
+        print("Game Over!")
+```
+
 # Absolute Rule
-Please never output anything other than a JSON array."""
+Please never output anything other than a "Example of tasks output" format."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    jsonValue = openai_call(prompt)
+    responseString = openai_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
-        jsonValue + "\n\n")
+        responseString + "\n\n")
     try:
-        return json.loads(jsonValue)
+        return TaskParser().decode(responseString)
     except Exception as error:
         log("json parse error:")
         log(error)
@@ -414,68 +440,104 @@ Please never output anything other than a JSON array."""
         return task_creation_agent(objective, result, task_description, task_list, executed_task_list)
 
 def check_completion_agent(
-        objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
+        objective: str, result: str, command: str, task: Dict, task_list: deque, executed_task_list: deque, current_dir: str
 ):
-    prompt = f"""You are an AI that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please generate tasks that can be executed in a terminal with one command as much as possible when necessary. If that is difficult, generate planned tasks with reduced granularity.
+    prompt = f"""You are an AI that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
 
-If the objective is achieved based on the results, output only the string "Complete" instead of an array. In that case, never output anything other than "Complete".
+If the objective is achieved based on the results, output only the string "Complete" instead of a "Example of tasks output" format. In that case, never output anything other than "Complete".
 
-If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output only a JSON array referring to the example below. In that case, never output anything other than the JSON array.
+If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output them as a format following the "Example of tasks output" below. Please never output anything other than a "Example of tasks output" format.
 
-# Example of JSON array output"""
-    prompt += """
-[
-    {
-        "type": "command",
-        "content": "echo 'import os\\n# HOW TO USE*\\n# 1. Fork this into a private Repl\\n# 2. Add your OpenAI API Key and Pinecone API Key\\n# 4. Update the OBJECTIVE variable\\n# 5. Press \\"Run\\" at the top.\\n# NOTE: the first time you run, it will initiate the table first - which may take a few minutes, you'\\\\''ll be waiting at the initial OBJECTIVE phase. If it fails, try again.)\\n#\\n# WARNING: THIS CODE WILL KEEP RUNNING UNTIL YOU STOP IT. BE MINDFUL OF OPENAI API BILLS. DELETE PINECONE INDEX AFTER USE.\\n\\nimport subprocess\\nimport openai\\n#import pinecone\\nimport time\\nimport json\\nfrom collections import deque\\nfrom typing import Dict, List\\n\\n#Set API Keys\\nOPENAI_API_KEY = os.environ['\\\\''OPEN_API_KEY'\\\\'']\\n#PINECONE_API_KEY = os.environ['\\\\''PINECONE_API_KEY'\\\\'']\\n#PINECONE_ENVIRONMENT = os.environ['\\\\''PINECONE_ENVIRONMENT'\\\\''] #Pinecone Environment (eg. \\"us-east1-gcp\\")\\n\\n#Set Variables\\nYOUR_TABLE_NAME = \\"test-table\\"\\nOBJECTIVE = \\"Implement a game of Minesweeper in python and run it in python.\\"\\nYOUR_FIRST_TASK = \\"Develop a task list.\\"\\n\\nMODEL = \\"gpt-4\\"\\nMAX_TOKEN = 7000\\n\\n#Print OBJECTIVE\\nprint(\\"\\\\033[96m\\\\033[1m\\" + \\"OBJECTIVE\\\\n\\\\n\\" + \\"\\\\033[0m\\\\033[0m\\")\\nprint(OBJECTIVE + \\"\\\\n\\\\n\\")\\n\\n# Configure OpenAI and Pinecone\\nopenai.api_key = OPENAI_API_KEY\\n#pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)\\n\\n# Create Pinecone index\\n#table_name = YOUR_TABLE_NAME' > ./output/sample.py"
-    },
-    {
-        "type": "plan",
-        "content": "Develop a task list."
-    },
-    {
-        "type": "command",
-        "content": "cd /dir1/dir2/"
-    },
-    {
-        "type": "command",
-        "content": "mkdir ./dir3/dir4"
-    }
-]"""
-    prompt += f"""          
+Below is the result of the last execution."""
 
-Below is the result of the last execution.
+    if task["type"] == "write":
+        prompt += f"""
+        
+# Path where the file was written
+{task["path"]}
+
+# Content written to file
+{task["content"]}"""
+        
+    elif task["type"] == "command":
+        prompt += f"""
 
 # Current directory
 {current_dir}
 
 # Command executed most recently
-{task_description}
+{command}
 
 # Result of last command executed
-{result}
+{result}"""
+        
+    prompt += f"""
 
-# List of most recently executed command results
+# List of most recently executed results
 {json.dumps(list(executed_task_list))}
 
 # Uncompleted tasks
-{json.dumps(list(task_list))}"""
+{TaskParser().encode(task_list)}"""
 
     prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
+# Example of tasks output
+type: write
+path: /app/requirements.txt
+```
+dataclasses
+```
+type: command
+path: /app/
+```bash
+pip install -r requirements.txt
+source venv/bin/activate
+```
+type: plan
+```
+Designing a Minesweeper.
+```
+type: write
+path: /app/minesweeper.py
+```python
+from board import Board
+
+class Minesweeper:
+    def __init__(self, rows: int, cols: int, mines: int):
+        self.board = Board(rows, cols, mines)
+
+    def start_game(self):
+        game_over = False
+
+        while not game_over:
+            self.display_board()
+            row, col, action = self.play_turn()
+            if action == "R":
+                game_over = self.board.reveal_cell(row, col)
+            elif action == "F":
+                self.board.flag_cell(row, col)
+
+            if self.board.is_game_over():
+                break
+
+        self.display_board()
+        print("Game Over!")
+```
+
 # Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a JSON array."""
+If the output is anything other than "Complete", please never output anything other than a "Example of tasks output" format."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    jsonValue = openai_call(prompt)
+    responseString = openai_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
-        jsonValue + "\n\n")
-    if jsonValue == "Complete":
-        return jsonValue
+        responseString + "\n\n")
+    if responseString == "Complete":
+        return responseString
     try:
-        return json.loads(jsonValue)
+        return TaskParser().decode(responseString)
     except Exception as error:
         log("json parse error:")
         log(error)
@@ -497,10 +559,11 @@ You will perform one task based on the following objectives
 # Current directory
 {current_dir}
 
-# List of most recently executed command results
+# List of most recently executed results
 {json.dumps(list(executed_task_list))}"""
 
     prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = TaskParser().close_open_backticks(prompt)
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
     result = openai_call(prompt)
@@ -639,13 +702,14 @@ Otherwise, please output only 'BabyCommandAGI: Continue'.
 # All output content so far for the command being executed
 {all_output_for_command}
 
-# List of most recently executed command results
+# List of most recently executed results
 {json.dumps(list(executed_task_list))}
 
 # Uncompleted tasks
-{json.dumps(list(task_list))}"""
+{TaskParser().encode(task_list)}"""
 
     prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
 # Current directory
@@ -673,6 +737,10 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
         result + "\n\n")
     return result
 
+def write_file(file_path: str, content: str):
+    with open(file_path, "w") as file:
+        file.write(content)
+
 # Add the initial task if starting new objective
 if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
     initial_task = {"type": "plan", "content": INITIAL_TASK}
@@ -695,47 +763,93 @@ def main():
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
             # Check executable command
-            if task['type'] == "command":
-                log("\033[33m\033[1m" + "*****EXCUTE COMMAND TASK*****\n\n" +
-                "\033[0m\033[0m")
+            if task['type'] == "write" or task['type'] == "command":
 
+                result = ""
+                command = ""
+                is_check_result = False
                 is_next_plan = False
                 is_complete = False
                 while True:
 
-                    result = execution_command(OBJECTIVE, task['content'], tasks_storage.get_tasks(),
-                                    executed_tasks_storage.get_tasks(), current_dir)
-                    if os.path.isfile(PWD_FILE):
-                        with open(PWD_FILE, "r") as pwd_file:
-                            current_dir = pwd_file.read().strip()
-                    
+                    if task['type'] == "write":
+                        log("\033[33m\033[1m" + "*****WRITE TASK*****\n\n" + "\033[0m\033[0m")
 
-                    # Step 2: Enrich result and store
-                    enriched_result = {"command": task['content'], "result": result}
-                    executed_tasks_storage.appendleft(enriched_result)
-                    save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                    
+                        path = task['path']
+                        content = task['content']
 
-                    # Keep only the most recent 30 tasks
-                    if len(executed_tasks_storage.get_tasks()) > 30:
-                        executed_tasks_storage.pop()
+                        write_file(path, content)
 
-                    if result == "BabyCommandAGI: Complete":
-                        is_complete = True
-                        break
+                        log("path: " + path + "\n\n")
+                        log(content + "\n\n")
 
-                    if result != "The Return Code for the command is 0:\n":
-                        break
+                        # Step 2: Enrich result and store
+                        enriched_result = {"write": task['content']}
+                        executed_tasks_storage.appendleft(enriched_result)
+                        save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                            
+                        # Keep only the most recent 30 tasks
+                        if len(executed_tasks_storage.get_tasks()) > 30:
+                            executed_tasks_storage.pop()
 
-                    if tasks_storage.is_empty():
-                        break
-                    else:
-                        next_task = tasks_storage.reference(0)
-                        if next_task['type'] == "command":
-                            task = tasks_storage.popleft()
-                        else:
-                            is_next_plan = True
+                        if tasks_storage.is_empty():
                             break
+                        else:
+                            next_task = tasks_storage.reference(0)
+                            if next_task['type'] == "write" or next_task['type'] == "command":
+                                task = tasks_storage.popleft()
+                            else:
+                                is_next_plan = True
+                                break
+
+                    elif task['type'] == "command":
+
+                        log("\033[33m\033[1m" + "*****EXCUTE COMMAND TASK*****\n\n" + "\033[0m\033[0m")
+
+                        if 'path' in task:
+                            current_dir = task['path']
+                        content = task['content']
+                        commands = content.strip().split("\n")
+                        for temp_command in commands:
+                            command = temp_command
+                            result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
+                                            executed_tasks_storage.get_tasks(), current_dir)
+                            if os.path.isfile(PWD_FILE):
+                                with open(PWD_FILE, "r") as pwd_file:
+                                    current_dir = pwd_file.read().strip()
+
+                            # Step 2: Enrich result and store
+                            enriched_result = {"command": command, "result": result}
+                            executed_tasks_storage.appendleft(enriched_result)
+                            save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                            
+
+                            # Keep only the most recent 30 tasks
+                            if len(executed_tasks_storage.get_tasks()) > 30:
+                                executed_tasks_storage.pop()
+
+                            if result == "BabyCommandAGI: Complete":
+                                is_complete = True
+                                break
+
+                            if result != "The Return Code for the command is 0:\n":
+                                is_check_result = True
+                                break
+
+                        if is_complete:
+                            break
+                        if is_check_result:
+                            break
+
+                        if tasks_storage.is_empty():
+                            break
+                        else:
+                            next_task = tasks_storage.reference(0)
+                            if next_task['type'] == "write" or next_task['type'] == "command":
+                                task = tasks_storage.popleft()
+                            else:
+                                is_next_plan = True
+                                break
 
                 log("\033[32m\033[1m" + "*****TASK RESULT*****\n\n" + "\033[0m\033[0m")
 
@@ -746,12 +860,11 @@ def main():
 
                 # Step 3: Create new tasks and reprioritize task list
                 new_tasks_list = check_completion_agent(OBJECTIVE, result,
-                                                     task['content'], tasks_storage.get_tasks(),
-                                                     executed_tasks_storage.get_tasks(), current_dir)
-                
+                                                        command, task, tasks_storage.get_tasks(),
+                                                        executed_tasks_storage.get_tasks(), current_dir)
+                    
                 if new_tasks_list == "Complete":
-                    log("\033[92m\033[1m" + "*****TASK COMPLETE*****\n\n" +
-                        "\033[0m\033[0m")
+                    log("\033[92m\033[1m" + "*****TASK COMPLETE*****\n\n" + "\033[0m\033[0m")
                     break
 
             else:
@@ -764,7 +877,8 @@ def main():
                 # Step 3: Create new tasks and reprioritize task list
                 new_tasks_list = task_creation_agent(OBJECTIVE, result, task['content'],
                                               tasks_storage.get_tasks(), executed_tasks_storage.get_tasks(), current_dir)
-                
+
+
         tasks_storage.replace(deque(new_tasks_list))
         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
         

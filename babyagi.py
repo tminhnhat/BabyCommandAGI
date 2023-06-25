@@ -735,6 +735,13 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
         result + "\n\n")
     return result
 
+def analyze_command_result(result: str) -> str:
+    result_lines = result.split('\n')[-100:]  # Extract the last 30 lines
+    for idx, line in enumerate(result_lines):
+        if "success" in line.lower() or "fail" in line.lower() or "error" in line.lower():
+            return '\n'.join(result_lines[idx:])  # Return all lines from the first match
+    return '\n'.join(result_lines)  # If no match, return the last 30 lines
+
 def write_file(file_path: str, content: str):
     with open(file_path, "w") as file:
         file.write(content)
@@ -816,6 +823,7 @@ def main():
                             command = commands.popleft()
                             result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
+                            result = analyze_command_result(result)
                             if os.path.isfile(PWD_FILE):
                                 with open(PWD_FILE, "r") as pwd_file:
                                     current_dir = pwd_file.read().strip()
@@ -825,20 +833,26 @@ def main():
                             tasks_storage.appendleft(task)
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
-                            enriched_result = {"command": command, "result": result}
+                            if result.startswith("The Return Code for the command is 0:") is False:
+                                enriched_result = {"command": command, "result": result}
+                                executed_tasks_storage.appendleft(enriched_result)
+                                save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                                # Keep only the most recent 30 tasks
+                                if len(executed_tasks_storage.get_tasks()) > 30:
+                                    executed_tasks_storage.pop()
+
+                                is_check_result = True
+                                break
+
+                            enriched_result = {"command": command, "result": "Success"}
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-
                             # Keep only the most recent 30 tasks
                             if len(executed_tasks_storage.get_tasks()) > 30:
                                 executed_tasks_storage.pop()
 
                             if result == "BabyCommandAGI: Complete":
                                 is_complete = True
-                                break
-
-                            if result != "The Return Code for the command is 0:\n":
-                                is_check_result = True
                                 break
 
                             task = tasks_storage.popleft()

@@ -70,6 +70,54 @@ CMD ["flutter", "run", "-d", "web-server", "--web-port=8080"]
 type: plan
 ```
 Configure the container to expose port 8080 to the host machine and access the app from a browser outside the container.
+```
+
+type: write
+path: /app/othello_app/lib/main.dart
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Othello',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MyHomePage(title: 'Othello'),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key? key, required this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Text('Othello Game'),
+      ),
+    );
+  }
+}
 ```"""
 #        test_input = """Example of tasks output:
 #1. Start a web server: `flutter run -d web-server --web-port 8080`
@@ -106,7 +154,7 @@ Configure the container to expose port 8080 to the host machine and access the a
         record_content = False
 
         for line in lines:
-            line = line.strip()
+            #line = line.strip()
             if line.startswith("type:"):
                 if type_line is not None:
                     raise ValueError("Multiple type lines found")

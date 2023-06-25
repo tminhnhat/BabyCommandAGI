@@ -131,10 +131,8 @@ assert INITIAL_TASK, "\033[91m\033[1m" + "INITIAL_TASK environment variable is m
 
 # Save and load functions for task_list and executed_task_list
 def save_data(data, filename):
-  # TODO: Temporarily disable the save function because it is not ready.
-  pass
-  #with open(filename, 'wb') as f:
-  #  pickle.dump(data, f)
+  with open(filename, 'wb') as f:
+    pickle.dump(data, f)
 
 def load_data(filename):
   if os.path.exists(filename):
@@ -752,9 +750,8 @@ def main():
         with open(PWD_FILE, "r") as pwd_file:
             current_dir = pwd_file.read().strip()
 
-    loop = True
     new_tasks_list = []
-    while loop:
+    while True:
         # As long as there are tasks in the storage...
         if tasks_storage:
             # Step 1: Pull the first task
@@ -784,6 +781,8 @@ def main():
                         log(content + "\n\n")
 
                         # Step 2: Enrich result and store
+                        save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+
                         enriched_result = {"write": task['content']}
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
@@ -808,10 +807,13 @@ def main():
 
                         if 'path' in task:
                             current_dir = task['path']
-                        content = task['content']
-                        commands = content.strip().split("\n")
-                        for temp_command in commands:
-                            command = temp_command
+
+                        while True:
+                            content = task['content'].strip()
+                            if content == "":
+                                break
+                            commands = deque(content.split("\n"))
+                            command = commands.popleft()
                             result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
                             if os.path.isfile(PWD_FILE):
@@ -819,10 +821,13 @@ def main():
                                     current_dir = pwd_file.read().strip()
 
                             # Step 2: Enrich result and store
+                            task['content'] = "\n".join(list(commands))
+                            tasks_storage.appendleft(task)
+                            save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+
                             enriched_result = {"command": command, "result": result}
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                            
 
                             # Keep only the most recent 30 tasks
                             if len(executed_tasks_storage.get_tasks()) > 30:
@@ -835,6 +840,8 @@ def main():
                             if result != "The Return Code for the command is 0:\n":
                                 is_check_result = True
                                 break
+
+                            task = tasks_storage.popleft()
 
                         if is_complete:
                             break

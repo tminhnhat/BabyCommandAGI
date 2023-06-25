@@ -71,13 +71,16 @@ type: plan
 ```
 Configure the container to expose port 8080 to the host machine and access the app from a browser outside the container.
 ```"""
+#        test_input = """Example of tasks output:
+#1. Start a web server: `flutter run -d web-server --web-port 8080`
+#2. Make the web server accessible from outside the container: Configure the container to expose port 8080 and map it to the host machine."""
         parsed_data = self.decode(test_input)
         print(parsed_data)
         print(self.encode(parsed_data))
 
     def decode(self, input_string: str) -> List[dict]:
         data = input_string.strip().split("type:")[1:]
-        if data.count == 0:
+        if len(data) == 0:
             raise ValueError("No valid items found")
         parsed_data = []
 
@@ -91,7 +94,7 @@ Configure the container to expose port 8080 to the host machine and access the a
             dict["content"] = content
             parsed_data.append(dict)
 
-        if parsed_data.count == 0:
+        if len(parsed_data) == 0:
             raise ValueError("No valid items found")
 
         return parsed_data
@@ -119,7 +122,7 @@ Configure the container to expose port 8080 to the host machine and access the a
 
         if type_line is None:
             raise ValueError("No type line found")
-        if content_lines.count == 0:
+        if len(content_lines) == 0:
             raise ValueError("No content found")
 
         content = "\n".join(content_lines)

@@ -821,9 +821,9 @@ def main():
                                 break
                             commands = deque(content.split("\n"))
                             command = commands.popleft()
-                            result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
+                            all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
-                            result = analyze_command_result(result)
+                            result = analyze_command_result(all_result)
                             if os.path.isfile(PWD_FILE):
                                 with open(PWD_FILE, "r") as pwd_file:
                                     current_dir = pwd_file.read().strip()
@@ -833,7 +833,7 @@ def main():
                             tasks_storage.appendleft(task)
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
-                            if result.startswith("The Return Code for the command is 0:") is False:
+                            if all_result.startswith("The Return Code for the command is 0:") is False:
                                 enriched_result = {"command": command, "result": result}
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)

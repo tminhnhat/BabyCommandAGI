@@ -905,5 +905,9 @@ def main():
         
         time.sleep(1)
 
+    log("\033[92m\033[1m" + "*****ALL COMPLETE*****\n\n" + "\033[0m\033[0m")
+    while True:
+        time.sleep(100)
+
 if __name__ == "__main__":
     main()

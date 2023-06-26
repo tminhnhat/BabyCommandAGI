@@ -61,16 +61,16 @@ OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.0))
 #Set Variables
 hash_object = hashlib.sha1(OBJECTIVE.encode())
 hex_dig = hash_object.hexdigest()
-table_name = f"{hex_dig[:8]}-{RESULTS_STORE_NAME}"
-TASK_LIST_FILE = f"{BABY_COMMAND_AGI_FOLDER}/data/{table_name}_task_list.pkl"
-EXECUTED_TASK_LIST_FILE = f"{BABY_COMMAND_AGI_FOLDER}/data/{table_name}_executed_task_list.pkl"
-PWD_FILE = f"{BABY_COMMAND_AGI_FOLDER}/pwd/{table_name}"
-ENV_DUMP_FILE = f"{BABY_COMMAND_AGI_FOLDER}/env_dump/{table_name}"
+objective_table_name = f"{hex_dig[:8]}-{RESULTS_STORE_NAME}"
+TASK_LIST_FILE = f"{BABY_COMMAND_AGI_FOLDER}/data/{objective_table_name}_task_list.pkl"
+EXECUTED_TASK_LIST_FILE = f"{BABY_COMMAND_AGI_FOLDER}/data/{RESULTS_STORE_NAME}_executed_task_list.pkl"
+PWD_FILE = f"{BABY_COMMAND_AGI_FOLDER}/pwd/{RESULTS_STORE_NAME}"
+ENV_DUMP_FILE = f"{BABY_COMMAND_AGI_FOLDER}/env_dump/{RESULTS_STORE_NAME}"
 
 # logger
 logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename=f"{BABY_COMMAND_AGI_FOLDER}/log/{table_name}.log",
+                    filename=f"{BABY_COMMAND_AGI_FOLDER}/log/{objective_table_name}.log",
                     filemode='a',
                     level=logging.DEBUG)
 def log(message):

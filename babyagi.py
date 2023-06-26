@@ -891,13 +891,13 @@ def main():
                 # Send to execution function to complete the task based on the context
                 log("\033[32m\033[1m" + "*****TASK RESULT*****\n\n" + "\033[0m\033[0m")
 
-                next_tasks = tasks_storage.get_tasks()
-                if len(next_tasks) > 0:
-                    next_tasks = next_tasks[1:]
+                next_tasks_storage = SingleTaskListStorage(tasks_storage.get_tasks())
+                if next_tasks_storage.is_empty() == False:
+                    next_tasks_storage.popleft()
 
                 # Step 3: Create new tasks and reprioritize task list
                 new_tasks_list = task_creation_agent(OBJECTIVE, result, task['content'],
-                                              next_tasks, executed_tasks_storage.get_tasks(), current_dir)
+                                              next_tasks_storage.get_tasks(), executed_tasks_storage.get_tasks(), current_dir)
 
 
         tasks_storage.replace(deque(new_tasks_list))

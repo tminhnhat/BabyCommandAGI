@@ -353,14 +353,9 @@ def openai_call(
 def task_creation_agent(
         objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
-    prompt = f"""You are an AI that manages tasks to achieve the desired "{objective}" based on the results of the last plan you created. Remove the tasks you've executed and create new tasks if necessary. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
-
-Afterwards, organize the tasks, remove any unnecessary tasks for the objective, and output them as a format following the "Example of tasks output" below. Please never output anything other than a "Example of tasks output" format.
+    prompt = f"""Please output the "Result of the last executed planned task." in the format according to the "Example of tasks output" below. Please never output anything other than a "Example of tasks output" format.
 
 The following is the execution result of the last planned task.
-
-# Last executed planned task
-{task_description}
 
 # Result of the last executed planned task.
 {result}
@@ -896,9 +891,13 @@ def main():
                 # Send to execution function to complete the task based on the context
                 log("\033[32m\033[1m" + "*****TASK RESULT*****\n\n" + "\033[0m\033[0m")
 
+                next_tasks = tasks_storage.get_tasks()
+                if len(next_tasks) > 0:
+                    next_tasks = next_tasks[1:]
+
                 # Step 3: Create new tasks and reprioritize task list
                 new_tasks_list = task_creation_agent(OBJECTIVE, result, task['content'],
-                                              tasks_storage.get_tasks(), executed_tasks_storage.get_tasks(), current_dir)
+                                              next_tasks, executed_tasks_storage.get_tasks(), current_dir)
 
 
         tasks_storage.replace(deque(new_tasks_list))

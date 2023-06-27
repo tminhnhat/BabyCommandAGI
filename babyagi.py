@@ -559,7 +559,7 @@ def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str) -> str:
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a Lead Engineer.
-You will perform one task based on the following objectives
+Based on the following OBJECTIVE, you will perform one task and absolutely output in the format of "Example of output" that always includes "type:" before the ``` block.
 
 # OBJECTIVE
 {objective}
@@ -577,7 +577,7 @@ You will perform one task based on the following objectives
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
-# Example of tasks output
+# Example of output
 type: write
 path: /app/requirements.txt
 ```
@@ -621,7 +621,7 @@ class Minesweeper:
 ```
 
 # Absolute Rule
-Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block."""
+Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")

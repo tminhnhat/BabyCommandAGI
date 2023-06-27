@@ -589,6 +589,7 @@ def execution_command(objective: str, command: str, task_list: deque,
     if pty_master is not None:
         os.close(pty_master)
         pty_master = None
+        time.sleep(1)
 
     #[Test]
     #command = "export PATH=$PATH:$PWD/flutter/bin"
@@ -602,7 +603,12 @@ def execution_command(objective: str, command: str, task_list: deque,
     if os.path.isfile(ENV_DUMP_FILE):
         with open(ENV_DUMP_FILE, "r") as env_file:
             for line in env_file:
+                # Skip lines with null bytes
+                if '\0' in line:
+                    continue
                 name, _, value = line.partition("=")
+                # Remove any null bytes from the value
+                value = value.replace('\0', '')
                 #log(f"new environment:{value.strip()}")
                 os.environ[name] = value.strip()  # Set the environment variable in the parent process
                 #log(f"set environment:{os.environ[name]}")

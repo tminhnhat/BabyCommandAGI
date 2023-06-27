@@ -20,6 +20,7 @@ import tiktoken as tiktoken
 import re
 import json
 from task_parser import TaskParser
+import sys
 
 #[Test]
 #TaskParser().test()
@@ -52,16 +53,17 @@ MAX_TOKEN = 5000
 MAX_STRING_LENGTH = 6000
 
 # Goal configuration
-OBJECTIVE = os.getenv("OBJECTIVE", "")
+ORIGINAL_OBJECTIVE = os.getenv("OBJECTIVE", "")
 INITIAL_TASK = os.getenv("INITIAL_TASK", os.getenv("FIRST_TASK", ""))
 
 # Model configuration
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.0))
 
 #Set Variables
-hash_object = hashlib.sha1(OBJECTIVE.encode())
+hash_object = hashlib.sha1(ORIGINAL_OBJECTIVE.encode())
 hex_dig = hash_object.hexdigest()
 objective_table_name = f"{hex_dig[:8]}-{RESULTS_STORE_NAME}"
+OBJECTIVE_LIST_FILE = f"{BABY_COMMAND_AGI_FOLDER}/data/{objective_table_name}_objectvie_list.pkl"
 TASK_LIST_FILE = f"{BABY_COMMAND_AGI_FOLDER}/data/{objective_table_name}_task_list.pkl"
 EXECUTED_TASK_LIST_FILE = f"{BABY_COMMAND_AGI_FOLDER}/data/{RESULTS_STORE_NAME}_executed_task_list.pkl"
 PWD_FILE = f"{BABY_COMMAND_AGI_FOLDER}/pwd/{RESULTS_STORE_NAME}"
@@ -77,6 +79,31 @@ def log(message):
     print(message)
     logging.info(message)
 
+# Save and load functions for task_list and executed_task_list
+def save_data(data, filename):
+  with open(filename, 'wb') as f:
+    pickle.dump(data, f)
+
+def load_data(filename):
+  if os.path.exists(filename):
+    with open(filename, 'rb') as f:
+      return pickle.load(f)
+  return deque([])
+
+def parse_objective(objective_list: deque) -> str:
+    if len(objective_list) == 1:
+        return objective_list[0]
+    objective = ""
+    for idx, objective_item in enumerate(objective_list):
+        objective += f"""[Objective {idx + 1}]{objective_item} """
+    return objective
+
+objective_list = load_data(OBJECTIVE_LIST_FILE) #deque([])
+if len(objective_list) == 0:
+    objective_list = deque([ORIGINAL_OBJECTIVE])
+
+OBJECTIVE = parse_objective(objective_list)
+
 # Extensions support begin
 
 def can_import(module_name):
@@ -87,6 +114,7 @@ def can_import(module_name):
         return False
 
 DOTENV_EXTENSIONS = os.getenv("DOTENV_EXTENSIONS", "").split(" ")
+
 
 # Command line arguments extension
 # Can override any of the above environment variables
@@ -129,16 +157,6 @@ log(f"LLM   : {LLM_MODEL}")
 assert OBJECTIVE, "\033[91m\033[1m" + "OBJECTIVE environment variable is missing from .env" + "\033[0m\033[0m"
 assert INITIAL_TASK, "\033[91m\033[1m" + "INITIAL_TASK environment variable is missing from .env" + "\033[0m\033[0m"
 
-# Save and load functions for task_list and executed_task_list
-def save_data(data, filename):
-  with open(filename, 'wb') as f:
-    pickle.dump(data, f)
-
-def load_data(filename):
-  if os.path.exists(filename):
-    with open(filename, 'rb') as f:
-      return pickle.load(f)
-  return deque([])
 
 LLAMA_MODEL_PATH = os.getenv("LLAMA_MODEL_PATH", "models/llama-13B/ggml-model.bin")
 if LLM_MODEL.startswith("llama"):
@@ -743,12 +761,32 @@ def write_file(file_path: str, content: str):
     with open(file_path, "w") as file:
         file.write(content)
 
+def user_feedback() -> str:
+
+    log("\033[33m\033[1m" + "*****USER FEEDBACK*****\n\n" + "\033[0m\033[0m")
+
+    # Ask the user in English
+    log('Has your OBJECTIVE been achieved? If yes, please enter "y". If not, please enter your "feedback" on how it was not achieved: \n')
+    response = input('')
+    log('\n')
+
+    # If the objective has been achieved
+    if response.lower() == 'y':
+        return 'y'
+    
+    # If the objective has not been achieved
+    else:
+        log("\033[33m\033[1m" + "[[Feedback]]" + "\n\n" + response + "\033[0m\033[0m" + "\n")
+        return response
+
+
 # Add the initial task if starting new objective
 if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
     initial_task = {"type": "plan", "content": INITIAL_TASK}
     tasks_storage.append(initial_task)
 
 def main():
+    global OBJECTIVE
     current_dir = BABY_COMMAND_AGI_FOLDER
     if os.path.isfile(PWD_FILE):
         with open(PWD_FILE, "r") as pwd_file:
@@ -882,7 +920,6 @@ def main():
                                                         executed_tasks_storage.get_tasks(), current_dir)
                     
                 if new_tasks_list == "Complete":
-                    log("\033[92m\033[1m" + "*****TASK COMPLETE*****\n\n" + "\033[0m\033[0m")
                     break
 
             else:
@@ -906,9 +943,20 @@ def main():
         
         time.sleep(1)
 
-    log("\033[92m\033[1m" + "*****ALL COMPLETE*****\n\n" + "\033[0m\033[0m")
+    log("\033[92m\033[1m" + "*****COMPLETE*****\n\n" + "\033[0m\033[0m")
     while True:
+        feedback = user_feedback()
+        if feedback != 'y':
+            objective_list.append(feedback)
+            save_data(objective_list, OBJECTIVE_LIST_FILE)
+            OBJECTIVE = parse_objective(objective_list)
+            tasks_storage.appendleft({"type": "plan", "content": feedback})
+            save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+            main()
+            break
+        log("\033[92m\033[1m" + "*****OBJECTIVE ACHIEVED*****\n\n" + "\033[0m\033[0m")
         time.sleep(100)
+
 
 if __name__ == "__main__":
     main()

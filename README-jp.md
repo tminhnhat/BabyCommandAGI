@@ -49,7 +49,7 @@ BabyCommandAGIはGUIよりも古くからあるコンピューターとの対話
 以下を実行してください。
 
 ```
-docker-compose up
+docker-compose up -d && docker attach babyagi
 ```
 
 **注意：目的を達成できず、ループし続けることがありま。OpenAI API の使用料にご注意ください。**

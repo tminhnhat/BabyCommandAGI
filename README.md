@@ -49,7 +49,7 @@ As a prerequisite, docker and docker-compose must be installed. Docker desktop i
 Please execute the following:
 
 ```
-docker-compose up
+docker-compose up -d && docker attach babyagi
 ```
 
 **Note: The agent might loop indefinitely if it cannot achieve its objective. Please be aware of the cost of OpenAI API usage.**

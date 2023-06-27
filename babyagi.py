@@ -430,7 +430,7 @@ Please never output anything other than a "Example of tasks output" format."""
         log("json parse error:")
         log(error)
         log("\nRetry\n\n")
-        return task_creation_agent(objective, result, task_description, task_list, executed_task_list)
+        return task_creation_agent(objective, result, task_description, task_list, executed_task_list, current_dir)
 
 def check_completion_agent(
         objective: str, result: str, command: str, task: Dict, task_list: deque, executed_task_list: deque, current_dir: str
@@ -535,7 +535,7 @@ If the output is anything other than "Complete", please never output anything ot
         log("json parse error:")
         log(error)
         log("\nRetry\n\n")
-        return check_completion_agent(objective, result, task_description, task_list, executed_task_list)
+        return check_completion_agent(objective, result, command, task, task_list, executed_task_list, current_dir)
 
 def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str) -> str:
@@ -734,7 +734,8 @@ def analyze_command_result(result: str) -> str:
     result_lines = result.split('\n')[-100:]  # Extract the last 30 lines
     for idx, line in enumerate(result_lines):
         if "success" in line.lower() or "fail" in line.lower() or "error" in line.lower():
-            return '\n'.join(result_lines[idx:])  # Return all lines from the first match
+            start_idx = max(0, idx - 10)  # Start from 10 lines before the "failure" line
+            return '\n'.join(result_lines[start_idx:])  # Return all lines from the first match
     return '\n'.join(result_lines)  # If no match, return the last 30 lines
 
 def write_file(file_path: str, content: str):

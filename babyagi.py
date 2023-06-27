@@ -445,7 +445,7 @@ Please never output anything other than a "Example of tasks output" format that 
     try:
         return TaskParser().decode(responseString)
     except Exception as error:
-        log("json parse error:")
+        log("task parse error:")
         log(error)
         log("\nRetry\n\n")
         return task_creation_agent(objective, result, task_description, task_list, executed_task_list, current_dir)
@@ -550,7 +550,7 @@ If the output is anything other than "Complete", please never output anything ot
     try:
         return TaskParser().decode(responseString)
     except Exception as error:
-        log("json parse error:")
+        log("task parse error:")
         log(error)
         log("\nRetry\n\n")
         return check_completion_agent(objective, result, command, task, task_list, executed_task_list, current_dir)
@@ -572,15 +572,69 @@ You will perform one task based on the following objectives
 
 # List of most recently executed results
 {json.dumps(list(executed_task_list))}"""
-
+    
     prompt = prompt[:MAX_STRING_LENGTH]
     prompt = TaskParser().close_open_backticks(prompt)
+    prompt += f"""
+
+# Example of tasks output
+type: write
+path: /app/requirements.txt
+```
+dataclasses
+```
+type: command
+path: /app/
+```bash
+pip install -r requirements.txt
+source venv/bin/activate
+```
+type: plan
+```
+Designing a Minesweeper.
+```
+type: write
+path: /app/minesweeper.py
+```python
+from board import Board
+
+class Minesweeper:
+    def __init__(self, rows: int, cols: int, mines: int):
+        self.board = Board(rows, cols, mines)
+
+    def start_game(self):
+        game_over = False
+
+        while not game_over:
+            self.display_board()
+            row, col, action = self.play_turn()
+            if action == "R":
+                game_over = self.board.reveal_cell(row, col)
+            elif action == "F":
+                self.board.flag_cell(row, col)
+
+            if self.board.is_game_over():
+                break
+
+        self.display_board()
+        print("Game Over!")
+```
+
+# Absolute Rule
+Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block."""
+
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    result = openai_call(prompt)
+    responseString = openai_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
-        result + "\n\n")
-    return result
+        responseString + "\n\n")
+    try:
+        return TaskParser().decode(responseString)
+    except Exception as error:
+        log("task parse error:")
+        log(error)
+        log("\nRetry\n\n")
+        return plan_agent(objective, task, executed_task_list, current_dir)
 
 # Execute a task based on the objective and five previous tasks
 def execution_command(objective: str, command: str, task_list: deque,
@@ -945,19 +999,10 @@ def main():
 
             else:
                 log("\033[33m\033[1m" + "*****PLAN TASK*****\n\n" + "\033[0m\033[0m")
-                result = plan_agent(OBJECTIVE, task['content'], executed_tasks_storage.get_tasks(), current_dir)
+                new_tasks_list = plan_agent(OBJECTIVE, task['content'], executed_tasks_storage.get_tasks(), current_dir)
 
                 # Send to execution function to complete the task based on the context
                 log("\033[32m\033[1m" + "*****TASK RESULT*****\n\n" + "\033[0m\033[0m")
-
-                next_tasks_storage = SingleTaskListStorage(tasks_storage.get_tasks())
-                if next_tasks_storage.is_empty() == False:
-                    next_tasks_storage.popleft()
-
-                # Step 3: Create new tasks and reprioritize task list
-                new_tasks_list = task_creation_agent(OBJECTIVE, result, task['content'],
-                                              next_tasks_storage.get_tasks(), executed_tasks_storage.get_tasks(), current_dir)
-
 
         tasks_storage.replace(deque(new_tasks_list))
         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)

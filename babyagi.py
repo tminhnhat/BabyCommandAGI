@@ -461,7 +461,7 @@ If the objective is not achieved based on the results, remove the executed tasks
 
 Below is the result of the last execution."""
 
-    if task["type"] == "write":
+    if task["type"].startswith("write"):
         prompt += f"""
         
 # Path where the file was written
@@ -470,7 +470,7 @@ Below is the result of the last execution."""
 # Content written to file
 {task["content"]}"""
         
-    elif task["type"] == "command":
+    elif task["type"].startswith("command"):
         prompt += f"""
 
 # Current directory
@@ -545,7 +545,7 @@ If the output is anything other than "Complete", please never output anything ot
     responseString = openai_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         responseString + "\n\n")
-    if responseString == "Complete":
+    if responseString.startswith("Complete"):
         return responseString
     try:
         return TaskParser().decode(responseString)
@@ -678,11 +678,11 @@ def execution_command(objective: str, command: str, task_list: deque,
                 input = user_input_for_waiting(objective, lastlines, command,
                                          "".join(std_blocks), task_list,
                                          executed_task_list, current_dir)
-                if input == 'BabyCommandAGI: Complete':
+                if input.startswith('BabyCommandAGI: Complete'):
                     return input
-                elif input == 'BabyCommandAGI: Interruption':
+                elif input.startswith('BabyCommandAGI: Interruption'):
                     break
-                elif input == 'BabyCommandAGI: Continue':
+                elif input.startswith('BabyCommandAGI: Continue'):
                     pass
                 else:
                     input += '\n'
@@ -766,7 +766,7 @@ def user_feedback() -> str:
     log("\033[33m\033[1m" + "*****USER FEEDBACK*****\n\n" + "\033[0m\033[0m")
 
     # Ask the user in English
-    log('Has your OBJECTIVE been achieved? If yes, please enter "y". If not, please enter your "feedback" on how it was not achieved: \n')
+    log('Has your OBJECTIVE been achieved? If yes, please enter "y". If not, please enter "feedback" to the AI on how the OBJECTIVE can be achieved: \n')
     response = input('')
     log('\n')
 
@@ -802,7 +802,7 @@ def main():
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
             # Check executable command
-            if task['type'] == "write" or task['type'] == "command":
+            if task['type'].startswith("write") or task['type'].startswith("command"):
 
                 result = ""
                 command = ""
@@ -811,7 +811,7 @@ def main():
                 is_complete = False
                 while True:
 
-                    if task['type'] == "write":
+                    if task['type'].startswith("write"):
                         log("\033[33m\033[1m" + "*****WRITE TASK*****\n\n" + "\033[0m\033[0m")
 
                         path = task['path']
@@ -837,13 +837,13 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'] == "write" or next_task['type'] == "command":
+                            if next_task['type'].startswith("write") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True
                                 break
 
-                    elif task['type'] == "command":
+                    elif task['type'].startswith("command"):
 
                         log("\033[33m\033[1m" + "*****EXCUTE COMMAND TASK*****\n\n" + "\033[0m\033[0m")
 
@@ -886,7 +886,7 @@ def main():
                             if len(executed_tasks_storage.get_tasks()) > 30:
                                 executed_tasks_storage.pop()
 
-                            if result == "BabyCommandAGI: Complete":
+                            if result.startswith("BabyCommandAGI: Complete"):
                                 is_complete = True
                                 break
 
@@ -901,7 +901,7 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'] == "write" or next_task['type'] == "command":
+                            if next_task['type'].startswith("write") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True
@@ -919,7 +919,7 @@ def main():
                                                         command, task, tasks_storage.get_tasks(),
                                                         executed_tasks_storage.get_tasks(), current_dir)
                     
-                if new_tasks_list == "Complete":
+                if new_tasks_list.startswith("Complete"):
                     break
 
             else:

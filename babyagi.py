@@ -586,6 +586,10 @@ You will perform one task based on the following objectives
 def execution_command(objective: str, command: str, task_list: deque,
                       executed_task_list: deque, current_dir: str) -> str:
     global pty_master
+    if pty_master is not None:
+        os.close(pty_master)
+        pty_master = None
+
     #[Test]
     #command = "export PATH=$PATH:$PWD/flutter/bin"
 
@@ -611,8 +615,6 @@ def execution_command(objective: str, command: str, task_list: deque,
     # Add an extra command to dump environment variables to a file
     command_to_execute = f"cd {current_dir}; {command}; echo $? > /tmp/cmd_exit_status; pwd > {PWD_FILE}; env > {ENV_DUMP_FILE}"
 
-    if pty_master is not None:
-        os.close(pty_master)
     pty_master, slave = pty.openpty()
     process = subprocess.Popen(command_to_execute,
                              stdin=slave,

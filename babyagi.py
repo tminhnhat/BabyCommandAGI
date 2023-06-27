@@ -612,7 +612,7 @@ def execution_command(objective: str, command: str, task_list: deque,
     command_to_execute = f"cd {current_dir}; {command}; echo $? > /tmp/cmd_exit_status; pwd > {PWD_FILE}; env > {ENV_DUMP_FILE}"
 
     if pty_master is not None:
-        pty_master.close()
+        os.close(pty_master)
     pty_master, slave = pty.openpty()
     process = subprocess.Popen(command_to_execute,
                              stdin=slave,

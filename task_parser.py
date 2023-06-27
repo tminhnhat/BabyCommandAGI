@@ -152,6 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
         type_line, path_line = None, None
         content_lines = []
         record_content = False
+        has_content = False
 
         for line in lines:
             #line = line.strip()
@@ -164,13 +165,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     raise ValueError("Multiple path lines found")
                 path_line = line[5:].strip()
             elif line.startswith("```"):
+                has_content = True
                 record_content = not record_content
             elif record_content:
                 content_lines.append(line)
 
         if type_line is None:
             raise ValueError("No type line found")
-        if len(content_lines) == 0:
+        if len(content_lines) == 0 and has_content == False:
             raise ValueError("No content found")
 
         content = "\n".join(content_lines)

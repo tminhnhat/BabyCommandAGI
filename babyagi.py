@@ -574,7 +574,6 @@ Based on the following OBJECTIVE, you will perform one task and absolutely outpu
 {json.dumps(list(executed_task_list))}"""
     
     prompt = prompt[:MAX_STRING_LENGTH]
-    prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
 # Example of output

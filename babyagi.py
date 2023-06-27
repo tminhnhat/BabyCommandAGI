@@ -585,6 +585,7 @@ You will perform one task based on the following objectives
 # Execute a task based on the objective and five previous tasks
 def execution_command(objective: str, command: str, task_list: deque,
                       executed_task_list: deque, current_dir: str) -> str:
+    global pty_master
     #[Test]
     #command = "export PATH=$PATH:$PWD/flutter/bin"
 
@@ -610,6 +611,8 @@ def execution_command(objective: str, command: str, task_list: deque,
     # Add an extra command to dump environment variables to a file
     command_to_execute = f"cd {current_dir}; {command}; echo $? > /tmp/cmd_exit_status; pwd > {PWD_FILE}; env > {ENV_DUMP_FILE}"
 
+    if pty_master is not None:
+        pty_master.close()
     pty_master, slave = pty.openpty()
     process = subprocess.Popen(command_to_execute,
                              stdin=slave,
@@ -689,6 +692,7 @@ def execution_command(objective: str, command: str, task_list: deque,
                     os.write(pty_master, input.encode())
 
     os.close(pty_master)
+    pty_master = None
     out = "".join(std_blocks)
 
     with open("/tmp/cmd_exit_status", "r") as status_file:
@@ -785,6 +789,8 @@ if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
     initial_task = {"type": "plan", "content": INITIAL_TASK}
     tasks_storage.append(initial_task)
 
+pty_master = None
+
 def main():
     global OBJECTIVE
     current_dir = BABY_COMMAND_AGI_FOLDER
@@ -868,6 +874,17 @@ def main():
                             tasks_storage.appendleft(task)
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
+                            if all_result.startswith("BabyCommandAGI: Complete"):
+                                enriched_result = {"command": command, "result": "Success"}
+                                executed_tasks_storage.appendleft(enriched_result)
+                                save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                                # Keep only the most recent 30 tasks
+                                if len(executed_tasks_storage.get_tasks()) > 30:
+                                    executed_tasks_storage.pop()
+
+                                is_complete = True
+                                break
+
                             if all_result.startswith("The Return Code for the command is 0:") is False:
                                 enriched_result = {"command": command, "result": result}
                                 executed_tasks_storage.appendleft(enriched_result)
@@ -885,10 +902,6 @@ def main():
                             # Keep only the most recent 30 tasks
                             if len(executed_tasks_storage.get_tasks()) > 30:
                                 executed_tasks_storage.pop()
-
-                            if result.startswith("BabyCommandAGI: Complete"):
-                                is_complete = True
-                                break
 
                             task = tasks_storage.popleft()
 
@@ -919,7 +932,7 @@ def main():
                                                         command, task, tasks_storage.get_tasks(),
                                                         executed_tasks_storage.get_tasks(), current_dir)
                     
-                if new_tasks_list.startswith("Complete"):
+                if isinstance(new_tasks_list, str) and new_tasks_list.startswith("Complete"):
                     break
 
             else:

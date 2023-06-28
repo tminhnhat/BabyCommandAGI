@@ -576,7 +576,7 @@ If the output is anything other than "Complete", please never output anything ot
 def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str) -> str:
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
-    prompt = f"""You are a Best engineer.
+    prompt = f"""You are a best engineer.
 Based on the following OBJECTIVE, you will perform one task and absolutely output in the format of "Example of output" that always includes "type:" before the ``` block.
 
 # OBJECTIVE

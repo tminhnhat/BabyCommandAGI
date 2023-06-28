@@ -1066,7 +1066,7 @@ def main():
     while True:
         feedback = user_feedback()
         if feedback != 'y':
-            objective_list.append(feedback)
+            objective_list = deque([feedback])
             save_data(objective_list, OBJECTIVE_LIST_FILE)
             OBJECTIVE = parse_objective(objective_list)
             tasks_storage.appendleft({"type": "plan", "content": feedback})

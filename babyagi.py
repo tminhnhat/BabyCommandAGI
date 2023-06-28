@@ -927,7 +927,7 @@ def main():
                         # Step 2: Enrich result and store
                         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
-                        enriched_result = {"write": task['content']}
+                        enriched_result = {"write": task['content'], "path": path}
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             
@@ -951,6 +951,23 @@ def main():
 
                         if 'path' in task:
                             current_dir = task['path']
+                            command = f"cd {current_dir}"
+                            all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
+                                            executed_tasks_storage.get_tasks(), current_dir)
+                            enriched_result = {"command": command}
+                            if all_result.startswith("The Return Code for the command is 0:"):
+                                enriched_result['result'] = "Success"
+                            else:
+                                enriched_result['result'] = all_result
+                            if os.path.isfile(PWD_FILE):
+                                with open(PWD_FILE, "r") as pwd_file:
+                                    current_dir = pwd_file.read().strip()
+
+                            executed_tasks_storage.appendleft(enriched_result)
+                            save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                            # Keep only the most recent 30 tasks
+                            if len(executed_tasks_storage.get_tasks()) > 30:
+                                executed_tasks_storage.pop()
 
                         while True:
                             content = task['content'].strip()
@@ -970,8 +987,10 @@ def main():
                             tasks_storage.appendleft(task)
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
+                            enriched_result = {"command": command}
+
                             if all_result.startswith("BabyCommandAGI: Complete"):
-                                enriched_result = {"command": command, "result": "Success"}
+                                enriched_result['result'] = "Success"
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 # Keep only the most recent 30 tasks
@@ -982,7 +1001,7 @@ def main():
                                 break
 
                             if all_result.startswith("The Return Code for the command is 0:") is False:
-                                enriched_result = {"command": command, "result": result}
+                                enriched_result['result'] = result
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 # Keep only the most recent 30 tasks
@@ -992,7 +1011,7 @@ def main():
                                 is_check_result = True
                                 break
 
-                            enriched_result = {"command": command, "result": "Success"}
+                            enriched_result['result'] = "Success"
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             # Keep only the most recent 30 tasks

@@ -706,15 +706,22 @@ def execution_command(objective: str, command: str, task_list: deque,
 
     std_blocks = []
 
+    start_time = time.time()
+    notification_time = time.time()
+    print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
+
     while process.poll() is None:
 
         if input_flag == 'f':
             print("\n" + "\033[33m\033[1m" + 'The "f" is pressed and it goes to "feedback".' + "\033[0m\033[0m" + "\n")
             return 'BabyCommandAGI: Complete'
         
-        print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
+        if notification_time + 30 < time.time():
+            notification_time = time.time()
+            print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
+        
         # Check for output with a timeout of some minutes
-        rlist, wlist, xlist = select.select([pty_master], [], [], 300)
+        rlist, wlist, xlist = select.select([pty_master], [], [], 1)
         if rlist or wlist or xlist:
             if rlist:
                 for read in rlist:
@@ -757,24 +764,27 @@ def execution_command(objective: str, command: str, task_list: deque,
 
         else:
             if USER_INPUT_LLM:
-                # Concatenate the output and split it by lines
-                stdout_lines = "".join(std_blocks).splitlines()
+                if time.time() - start_time > 300:
+                    start_time = time.time()
 
-                # No output received within 5 seconds, call the check_wating_for_response function with the last 3 lines or the entire content
-                lastlines = stdout_lines[-3:] if len(stdout_lines) >= 3 else stdout_lines
-                lastlines = "\n".join(lastlines)
-                input = user_input_for_waiting(objective, lastlines, command,
-                                         "".join(std_blocks), task_list,
-                                         executed_task_list, current_dir)
-                if input.startswith('BabyCommandAGI: Complete'):
-                    return input
-                elif input.startswith('BabyCommandAGI: Interruption'):
-                    break
-                elif input.startswith('BabyCommandAGI: Continue'):
-                    pass
-                else:
-                    input += '\n'
-                    os.write(pty_master, input.encode())
+                    # Concatenate the output and split it by lines
+                    stdout_lines = "".join(std_blocks).splitlines()
+
+                    # No output received within 5 seconds, call the check_wating_for_response function with the last 3 lines or the entire content
+                    lastlines = stdout_lines[-3:] if len(stdout_lines) >= 3 else stdout_lines
+                    lastlines = "\n".join(lastlines)
+                    input = user_input_for_waiting(objective, lastlines, command,
+                                            "".join(std_blocks), task_list,
+                                            executed_task_list, current_dir)
+                    if input.startswith('BabyCommandAGI: Complete'):
+                        return input
+                    elif input.startswith('BabyCommandAGI: Interruption'):
+                        break
+                    elif input.startswith('BabyCommandAGI: Continue'):
+                        pass
+                    else:
+                        input += '\n'
+                        os.write(pty_master, input.encode())
 
     os.close(pty_master)
     pty_master = None

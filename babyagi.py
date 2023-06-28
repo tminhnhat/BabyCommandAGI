@@ -375,7 +375,7 @@ input_flag = None
 def check_input():
     global input_flag
     while True:
-        time.sleep(1)
+        time.sleep(2)
         if input_flag == 'f':
             continue
         inp = input()
@@ -713,7 +713,7 @@ def execution_command(objective: str, command: str, task_list: deque,
     while process.poll() is None:
 
         if input_flag == 'f':
-            print("\n" + "\033[33m\033[1m" + 'The "f" is pressed and it goes to "feedback".' + "\033[0m\033[0m" + "\n")
+            log("\n" + "\033[33m\033[1m" + 'The "f" is pressed and it goes to "feedback".' + "\033[0m\033[0m" + "\n")
             return 'BabyCommandAGI: Complete'
         
         if notification_time + 30 < time.time():
@@ -721,7 +721,7 @@ def execution_command(objective: str, command: str, task_list: deque,
             print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
         
         # Check for output with a timeout of some minutes
-        rlist, wlist, xlist = select.select([pty_master], [], [], 1)
+        rlist, wlist, xlist = select.select([pty_master], [], [], 2)
         if rlist or wlist or xlist:
             if rlist:
                 for read in rlist:
@@ -1047,12 +1047,12 @@ def main():
     while True:
         feedback = user_feedback()
         if feedback != 'y':
-            input_flag = None
             objective_list.append(feedback)
             save_data(objective_list, OBJECTIVE_LIST_FILE)
             OBJECTIVE = parse_objective(objective_list)
             tasks_storage.appendleft({"type": "plan", "content": feedback})
             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+            input_flag = None
             main()
             break
         log("\033[92m\033[1m" + "*****OBJECTIVE ACHIEVED*****\n\n" + "\033[0m\033[0m")

@@ -12,6 +12,18 @@ BabyCommandAGIはGUIよりも古くからあるコンピューターとの対話
 
 このPythonスクリプトのシステムは[BabyAGI](https://github.com/yoheinakajima/babyagi)をベースにしています。但し、[BabyAGI](https://github.com/yoheinakajima/babyagi)の思考部分だった箇所について効率良くコマンドが実行するためにかなり簡略化してしまっています。(後に変えていくかもしれません)
 
+# ユースケース
+
+BabyCommandAGIは様々なケースで使用できる可能性があります。是非皆さん使ってユースケースを見つけてみてください。
+
+下記にわかっている有用なユースケースが記載しておきます。
+
+## 環境構築
+
+- コンテナのLinux環境にFlutterをインストールし、デフォルトのFlutterアプリを起動して、Webサーバーを立ち上げ、コンテナ外からアクセスできるようにする
+
+https://twitter.com/saten_work/status/1667126272072491009
+
 # 仕組み
 
 このスクリプトは、次のような継続したループを実行することで動作します
@@ -52,20 +64,21 @@ BabyCommandAGIはGUIよりも古くからあるコンピューターとの対話
 docker-compose up -d && docker attach babyagi
 ```
 
-**注意：目的を達成できず、ループし続けることがありま。OpenAI API の使用料にご注意ください。**
+**注意：Ctrl+Cで終了してもDocker Desktopなどでコンテナ停止しないと停止しなくなりました。ご注意ください。**
 
-失敗した場合は、再度実行すれば途中から再開できます。タスクを初期状態から実行したい場合は、```.env```のRESULTS_STORE_NAMEを変更してください。
+**注意：目的を達成できず、ループし続けることがあります。OpenAI API の使用料にご注意ください。**
 
-OBJECTIVEが異なった際も別にタスクを保存します。
+失敗した場合は、再度実行すれば途中から再開できます。
+
+OBJECTIVEを変更すると将来のタスク一覧とOBJECTIVEのフィードバックがクリアされます。
 
 以下にそれぞれ途中まで実行された状態が保存されます。
 - ```data```フォルダ配下に途中まで実行されたタスクは保存されています。
 - ```pwd```フォルダ配下には最後のカレントディレクトリ
 - ```env_dump```フォルダ配下には最後の環境変数のdump
 
-タスクではなく、環境をリセットしたい場合はBabyCommandAGIのDockerのコンテナを削除してください。
-その際はRESULTS_STORE_NAMEも変更することをおすすめします。
-(BabyCommandAGIが様々なコマンドを実行するので環境が壊れることがあります)
+環境をリセットしたい場合はBabyCommandAGIのDockerのコンテナを一度削除して、```.env```のRESULTS_STORE_NAMEを変更してください。
+(BabyCommandAGIは様々なコマンドを実行するので環境が壊れることがあります)
 
 # ログ
 

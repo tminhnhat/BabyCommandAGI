@@ -12,6 +12,18 @@ This system is recommended to be run with an API of GPT-4 or higher.
 
 This Python script system is based on [BabyAGI](https://github.com/yoheinakajima/babyagi). However, the part that was the thinking part of [BabyAGI](https://github.com/yoheinakajima/babyagi) has been greatly simplified in order to execute commands efficiently. (This may change later)
 
+# Use Cases
+
+BabyCommandAGI has the potential to be used in various cases. Please try using it to find use cases.
+
+Below are some known useful use cases.
+
+## Environment Setup
+
+- Install Flutter in a Linux environment in a container, create the default Flutter app, start a web server, and make it accessible from outside the container
+
+https://twitter.com/saten_work/status/1667126272072491009
+
 # Mechanism
 
 This script works by executing the following continuous loop:
@@ -52,19 +64,21 @@ Please execute the following:
 docker-compose up -d && docker attach babyagi
 ```
 
+**Note: Even if you exit with Ctrl+C, it will not stop unless you stop the container with Docker Desktop or similar. Please be careful.**
+
 **Note: The agent might loop indefinitely if it cannot achieve its objective. Please be aware of the cost of OpenAI API usage.**
 
-If you fail, you can resume from where you left off by running it again. If you want to run the task from the initial state, please change the RESULTS_STORE_NAME in ```.env```.
+If you fail, you can resume from where you left off by running it again.
 
-Different tasks will be saved separately when the OBJECTIVE is different.
+Changing the OBJECTIVE will clear the list of future tasks and OBJECTIVE feedback.
 
 The following are saved up to the point where they were executed:
 - Tasks executed up to a certain point are saved under the ```data``` folder.
 - The last current directory is under the ```pwd``` folder.
 - The dump of the last environment variables is under the ```env_dump``` folder.
 
-If you want to reset the environment, not the task, please delete the Docker container of BabyCommandAGI. In that case, we recommend changing the RESULTS_STORE_NAME as well.
-(Because BabyCommandAGI executes various commands, the environment may be broken)
+If you want to reset the environment, please delete the Docker container of BabyCommandAGI once and change the RESULTS_STORE_NAME in ```.env```.
+(BabyCommandAGI executes various commands, so the environment may be broken)
 
 # Logs
 

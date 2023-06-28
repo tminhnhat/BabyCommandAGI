@@ -80,6 +80,10 @@ The following are saved up to the point where they were executed:
 If you want to reset the environment, please delete the Docker container of BabyCommandAGI once and change the RESULTS_STORE_NAME in ```.env```.
 (BabyCommandAGI executes various commands, so the environment may be broken)
 
+## Feedback to AI
+
+After completion or when you enter "f", you can give user feedback to the AI on whether the goal was properly achieved. This allows you to give feedback to the AI on information that is not available from the CLI, like a GUI.
+
 # Logs
 
 The logs during execution are saved under the ```log``` folder.

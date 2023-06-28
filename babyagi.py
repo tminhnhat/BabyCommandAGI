@@ -21,6 +21,7 @@ import re
 import json
 from task_parser import TaskParser
 import sys
+import threading
 
 #[Test]
 #TaskParser().test()
@@ -368,6 +369,23 @@ def openai_call(
         else:
             break
 
+# Global variable for flagging input
+input_flag = None
+
+def check_input():
+    global input_flag
+    while True:
+        time.sleep(1)
+        if input_flag == 'f':
+            continue
+        inp = input()
+        if inp == 'f':
+            input_flag = 'f'
+
+# Thread for non-blocking input check
+input_thread = threading.Thread(target=check_input, daemon=True)
+input_thread.start()
+
 def task_creation_agent(
         objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
@@ -639,6 +657,7 @@ Please never output anything other than a "Example of output" format that always
 def execution_command(objective: str, command: str, task_list: deque,
                       executed_task_list: deque, current_dir: str) -> str:
     global pty_master
+    global input_flag
     if pty_master is not None:
         os.close(pty_master)
         pty_master = None
@@ -689,6 +708,11 @@ def execution_command(objective: str, command: str, task_list: deque,
 
     while process.poll() is None:
 
+        if input_flag == 'f':
+            print("\n" + "\033[33m\033[1m" + 'The "f" is pressed and it goes to "feedback".' + "\033[0m\033[0m" + "\n")
+            return 'BabyCommandAGI: Complete'
+        
+        print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
         # Check for output with a timeout of some minutes
         rlist, wlist, xlist = select.select([pty_master], [], [], 300)
         if rlist or wlist or xlist:
@@ -854,6 +878,7 @@ pty_master = None
 
 def main():
     global OBJECTIVE
+    global input_flag
     current_dir = BABY_COMMAND_AGI_FOLDER
     if os.path.isfile(PWD_FILE):
         with open(PWD_FILE, "r") as pwd_file:
@@ -1012,6 +1037,7 @@ def main():
     while True:
         feedback = user_feedback()
         if feedback != 'y':
+            input_flag = None
             objective_list.append(feedback)
             save_data(objective_list, OBJECTIVE_LIST_FILE)
             OBJECTIVE = parse_objective(objective_list)

@@ -728,8 +728,6 @@ def execution_command(objective: str, command: str, task_list: deque,
                     try:
                         output_block = os.read(read, 1024).decode()
                     except OSError:
-                        # Break the loop if OSError occurs
-                        log("\nOSError rlist\n\n")
                         break
 
                     if output_block:

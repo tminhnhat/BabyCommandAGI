@@ -18,9 +18,15 @@ BabyCommandAGI has the potential to be used in various cases. Please try using i
 
 Below are some known useful use cases.
 
-## Environment Setup
+## Automatic Programming
 
-- Install Flutter in a Linux environment in a container, create the default Flutter app, start a web server, and make it accessible from outside the container
+- Create an app automatically just by providing feedback
+
+https://twitter.com/saten_work/status/1674855573412810753
+
+## Automatic Environment Setup
+
+- Install Flutter in a Linux container environment, create a Flutter app, launch a web server, and make it accessible from outside the container
 
 https://twitter.com/saten_work/status/1667126272072491009
 

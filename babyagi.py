@@ -858,7 +858,7 @@ def analyze_command_result(result: str) -> str:
     lastString = result[-MAX_COMMAND_RESULT_LENGTH:]
     result_lines = lastString.split('\n')[-100:]  # Extract the last 30 lines
     for idx, line in enumerate(result_lines):
-        if "success" in line.lower() or "fail" in line.lower() or "error" in line.lower():
+        if "fail" in line.lower() or "error" in line.lower():
             start_idx = max(0, idx - 10)  # Start from 10 lines before the "failure" line
             return '\n'.join(result_lines[start_idx:])  # Return all lines from the first match
     return '\n'.join(result_lines)  # If no match, return the last 30 lines

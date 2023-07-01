@@ -378,7 +378,7 @@ def check_input():
         time.sleep(2)
         if input_flag == 'f':
             continue
-        print('waiting input')
+        log('The state has been set so that if you input "f", it will go to feedback.')
         inp = input()
         if inp == 'f':
             input_flag = 'f'

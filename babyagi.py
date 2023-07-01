@@ -18,8 +18,8 @@ import importlib
 import openai
 import tiktoken as tiktoken
 import re
-import json
 from task_parser import TaskParser
+from executed_task_parser import ExecutedTaskParser
 import sys
 import threading
 
@@ -398,7 +398,7 @@ The following is the execution result of the last planned task.
 {result}
 
 # List of most recently executed results
-{json.dumps(list(executed_task_list))}
+{ExecutedTaskParser().encode(executed_task_list)}
 
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
@@ -504,7 +504,7 @@ Below is the result of the last execution."""
     prompt += f"""
 
 # List of most recently executed results
-{json.dumps(list(executed_task_list))}
+{ExecutedTaskParser().encode(executed_task_list)}
 
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
@@ -590,9 +590,10 @@ Based on the following OBJECTIVE, you will perform one task and absolutely outpu
 {current_dir}
 
 # List of most recently executed results
-{json.dumps(list(executed_task_list))}"""
+{ExecutedTaskParser().encode(executed_task_list)}"""
     
     prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
 # Example of output
@@ -812,7 +813,7 @@ Otherwise, please output only 'BabyCommandAGI: Continue'.
 {all_output_for_command}
 
 # List of most recently executed results
-{json.dumps(list(executed_task_list))}
+{ExecutedTaskParser().encode(executed_task_list)}
 
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
@@ -926,7 +927,11 @@ def main():
                         # Step 2: Enrich result and store
                         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
-                        enriched_result = {"write": task['content'], "path": path}
+                        enriched_result = {
+                            "type": "write",
+                            "target ": path,
+                            "result": task['content']
+                            }
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             
@@ -953,7 +958,7 @@ def main():
                             command = f"cd {current_dir}"
                             all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
-                            enriched_result = {"command": command}
+                            enriched_result = { "type": "command", "target": command}
                             if all_result.startswith("The Return Code for the command is 0:"):
                                 enriched_result['result'] = "Success"
                             else:
@@ -986,7 +991,7 @@ def main():
                             tasks_storage.appendleft(task)
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
-                            enriched_result = {"command": command}
+                            enriched_result = { "type": "command", "target": command}
 
                             if all_result.startswith("BabyCommandAGI: Complete"):
                                 enriched_result['result'] = "Success"

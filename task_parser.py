@@ -191,6 +191,6 @@ class _MyHomePageState extends State<MyHomePage> {
         return output
     
     def close_open_backticks(self, string: str) -> str:
-        if string.count('```') % 2 != 0:
-            string += '```'
+        if string.count('\n```') % 2 != 0:
+            string += '\n```'
         return string

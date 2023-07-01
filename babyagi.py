@@ -501,10 +501,13 @@ Below is the result of the last execution."""
 # Result of last command executed
 {result}"""
         
-    prompt += f"""
+    if len(executed_task_list) > 1:
+        prompt += f"""
 
-# List of most recently executed results
-{ExecutedTaskParser().encode(executed_task_list)}
+# The list of results executed most recently after that.
+{ExecutedTaskParser().encode(executed_task_list[1:])}"""
+
+    prompt += f"""
 
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""

@@ -502,10 +502,12 @@ Below is the result of the last execution."""
 {result}"""
         
     if len(executed_task_list) > 1:
+        after_executed_task_list = executed_task_list.copy()
+        after_executed_task_list.popleft()
         prompt += f"""
-
+        
 # The list of results executed most recently after that.
-{ExecutedTaskParser().encode(executed_task_list[1:])}"""
+{ExecutedTaskParser().encode(after_executed_task_list)}"""
 
     prompt += f"""
 

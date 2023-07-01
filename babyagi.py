@@ -52,6 +52,7 @@ USER_INPUT_LLM = True
 JOIN_EXISTING_OBJECTIVE = False
 MAX_TOKEN = 5000
 MAX_STRING_LENGTH = 6000
+MAX_COMMAND_RESULT_LENGTH = 2500
 
 # Goal configuration
 ORIGINAL_OBJECTIVE = os.getenv("OBJECTIVE", "")
@@ -854,12 +855,30 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
     return result
 
 def analyze_command_result(result: str) -> str:
-    result_lines = result.split('\n')[-100:]  # Extract the last 30 lines
+    lastString = result[-MAX_COMMAND_RESULT_LENGTH:]
+    result_lines = lastString.split('\n')[-100:]  # Extract the last 30 lines
     for idx, line in enumerate(result_lines):
         if "success" in line.lower() or "fail" in line.lower() or "error" in line.lower():
             start_idx = max(0, idx - 10)  # Start from 10 lines before the "failure" line
             return '\n'.join(result_lines[start_idx:])  # Return all lines from the first match
     return '\n'.join(result_lines)  # If no match, return the last 30 lines
+
+taro = analyze_command_result("""
+Cloning into 'flutter'...
+remote: Enumerating objects: 453457, done.
+remote: Counting objects: 100% (453457/453457), done.
+remote: Compressing objects: 100% (88453/88453), done.
+Receiving objects:   0% (158/453457), 108.00 KiB | 200.00 Receiving objects:   0% (253/453457), 188.00 KiB | 107.00 Receiving objects:   0% (390/453457), 300.00 KiB | 94.00 KReceiving objects:   0% (505/453457), 340.00 KiB | 90.00 KReceiving objects:   0% (736/453457), 504.00 KiB | 104.00 Receiving objects:   0% (917/453457), 684.00 KiB | 108.00 Receiving objects:   0% (1051/453457), 796.00 KiB | 117.00Receiving objects:   0% (1263/453457), 980.00 KiB | 140.00Receiving objects:   0% (1511/453457), 1.16 MiB | 162.00 KReceiving objects:   0% (1630/453457), 1.24 MiB | 133.00 KReceiving objects:   0% (1657/453457), 1.25 MiB | 106.00 KReceiving objects:   0% (1696/453457), 1.25 MiB | 106.00 KReceiving objects:   0% (1761/453457), 1.29 MiB | 91.00 KiReceiving objects:   0% (1983/453457), 1.40 MiB | 79.00 KiReceiving objects:   0% (2128/453457), 1.52 MiB | 64.00 KiReceiving objects:   0% (2222/453457), 1.58 MiB | 63.00 KiReceiving objects:   0% (2328/453457), 1.65 MiB | 75.00 KiReceiving objects:   0% (2516/453457), 1.77 MiB | 92.00 KiReceiving objects:   0% (2731/453457), 1.83 MiB | 91.00 KiReceiving objects:   0% (2911/453457), 2.00 MiB | 100.00 KReceiving objects:   0% (3038/453457), 2.10 MiB | 107.00 KReceiving objects:   0% (3141/453457), 2.18 MiB | 112.00 KReceiving objects:   0% (3293/453457), 2.28 MiB | 108.00 KReceiving objects:   0% (3474/453457), 2.39 MiB | 98.00 KiB/s 
+"f": go to "feedback"
+
+Receiving objects:   0% (3653/453457), 2.51 MiB | 102.00 KReceiving objects:   0% (3772/453457), 2.56 MiB | 98.00 KiReceiving objects:   0% (3969/453457), 2.67 MiB | 104.00 KReceiving objects:   0% (4169/453457), 2.79 MiB | 109.00 KReceiving objects:   0% (4364/453457), 2.92 MiB | 110.00 KReceiving objects:   1% (4535/453457), 3.00 MiB | 113.00 KReceiving objects:   1% (4577/453457), 3.07 MiB | 112.00 KReceiving objects:   1% (4672/453457), 3.13 MiB | 105.00 KReceiving objects:   1% (4741/453457), 3.15 MiB | 95.00 KiReceiving objects:   1% (4862/453457), 3.21 MiB | 84.00 KiReceiving objects:   1% (4969/453457), 3.30 MiB | 74.00 KiReceiving objects:   1% (5113/453457), 3.33 MiB | 65.00 KiReceiving objects:   1% (5225/453457), 3.45 MiB | 64.00 KiReceiving objects:   1% (5305/453457), 3.48 MiB | 68.00 KiReceiving objects:   1% (5455/453457), 3.57 MiB | 70.00 KiReceiving objects:   1% (5481/453457), 3.60 MiB | 61.00 KiReceiving objects:   1% (5537/453457), 3.61 MiB | 56.00 KiReceiving objects:   1% (5694/453457), 3.68 MiB | 53.00 KiReceiving objects:   1% (5783/453457), 3.76 MiB | 57.00 KiReceiving objects:   1% (5892/453457), 3.82 MiB | 57.00 KiReceiving objects:   1% (6026/453457), 3.91 MiB | 63.00 KiReceiving objects:   1% (6406/453457), 4.00 MiB | 81.00 KiReceiving objects:   1% (6713/453457), 4.31 MiB | 121.00 KReceiving objects:   1% (6807/453457), 4.34 MiB | 123.00 KReceiving objects:   1% (6901/453457), 4.40 MiB | 122.00 KReceiving objects:   1% (6995/453457), 4.46 MiB | 116.00 KReceiving objects:   1% (7275/453457), 4.62 MiB | 101.00 K
+""")
+
+print(taro)
+
+while True:
+    time.sleep(100)
+
 
 def write_file(file_path: str, content: str):
     os.makedirs(os.path.dirname(file_path), exist_ok=True)

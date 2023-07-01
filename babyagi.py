@@ -378,7 +378,7 @@ def check_input():
         time.sleep(2)
         if input_flag == 'f':
             continue
-        log('The state has been set so that if you input "f", it will go to feedback.')
+        log("\n" + "\033[33m\033[1m" + 'The state has been set so that if you input "f", it will go to feedback.' + "\033[0m\033[0m" + "\n")
         inp = input()
         if inp == 'f':
             input_flag = 'f'

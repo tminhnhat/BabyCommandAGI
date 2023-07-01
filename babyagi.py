@@ -929,7 +929,7 @@ def main():
 
                         enriched_result = {
                             "type": "write",
-                            "target ": path,
+                            "target": path,
                             "result": task['content']
                             }
                         executed_tasks_storage.appendleft(enriched_result)

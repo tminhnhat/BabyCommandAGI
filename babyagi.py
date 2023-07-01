@@ -378,6 +378,7 @@ def check_input():
         time.sleep(2)
         if input_flag == 'f':
             continue
+        print('waiting input')
         inp = input()
         if inp == 'f':
             input_flag = 'f'
@@ -864,7 +865,7 @@ def user_feedback() -> str:
 
     # Ask the user in English
     log('Has your OBJECTIVE been achieved? If yes, please enter "y". If not, please enter "feedback" to the AI on how the OBJECTIVE can be achieved: \n')
-    response = input('')
+    response = input()
     log('\n')
 
     # If the objective has been achieved

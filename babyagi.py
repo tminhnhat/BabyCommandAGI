@@ -470,7 +470,7 @@ Please never output anything other than a "Example of tasks output" format that 
         return task_creation_agent(objective, result, task_description, task_list, executed_task_list, current_dir)
 
 def check_completion_agent(
-        objective: str, result: str, command: str, task: Dict, task_list: deque, executed_task_list: deque, current_dir: str
+        objective: str, enriched_result: Dict, task_list: deque, executed_task_list: deque, current_dir: str
 ):
     prompt = f"""You are an AI that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
 
@@ -480,26 +480,27 @@ If the objective is not achieved based on the results, remove the executed tasks
 
 Below is the result of the last execution."""
 
-    if task["type"].startswith("write"):
+    if enriched_result["type"].startswith("write"):
         prompt += f"""
         
 # Path where the file was written
-{task["path"]}
+{enriched_result["target"]}
 
 # Content written to file
-{task["content"]}"""
+{enriched_result["result"]}"""
         
-    elif task["type"].startswith("command"):
+    elif enriched_result["type"].startswith("command"):
         prompt += f"""
 
 # Current directory
 {current_dir}
 
 # Command executed most recently
-{command}
+{enriched_result["target"]}
+
 
 # Result of last command executed
-{result}"""
+{enriched_result["result"]}"""
         
     if len(executed_task_list) > 1:
         after_executed_task_list = executed_task_list.copy()
@@ -577,7 +578,7 @@ If the output is anything other than "Complete", please never output anything ot
         log("task parse error:")
         log(error)
         log("\nRetry\n\n")
-        return check_completion_agent(objective, result, command, task, task_list, executed_task_list, current_dir)
+        return check_completion_agent(objective, enriched_result, task_list, executed_task_list, current_dir)
 
 def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str) -> str:
@@ -911,8 +912,7 @@ def main():
             # Check executable command
             if task['type'].startswith("write") or task['type'].startswith("command"):
 
-                result = ""
-                command = ""
+                enriched_result = None
                 is_check_result = False
                 is_next_plan = False
                 is_complete = False
@@ -1052,8 +1052,7 @@ def main():
                     continue
 
                 # Step 3: Create new tasks and reprioritize task list
-                new_tasks_list = check_completion_agent(OBJECTIVE, result,
-                                                        command, task, tasks_storage.get_tasks(),
+                new_tasks_list = check_completion_agent(OBJECTIVE, enriched_result, tasks_storage.get_tasks(),
                                                         executed_tasks_storage.get_tasks(), current_dir)
                     
                 if isinstance(new_tasks_list, str) and new_tasks_list.startswith("Complete"):

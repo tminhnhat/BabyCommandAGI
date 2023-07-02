@@ -74,6 +74,8 @@ docker-compose up -d && docker attach babyagi
 
 **Note: The agent might loop indefinitely if it cannot achieve its objective. Please be aware of the cost of OpenAI API usage.**
 
+The AI's generated items will be created in the ```workspace``` folder.
+
 If you fail, you can resume from where you left off by running it again.
 
 Changing the OBJECTIVE will clear the list of future tasks and OBJECTIVE feedback.

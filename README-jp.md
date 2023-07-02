@@ -22,7 +22,7 @@ BabyCommandAGIは様々なケースで使用できる可能性があります。
 
 - フィードバックするだけでアプリを自動的に作らせる
 
-[Title](https://twitter.com/saten_work/status/1674855573412810753)
+https://twitter.com/saten_work/status/1674855573412810753
 
 ## 自動環境構築
 
@@ -73,6 +73,8 @@ docker-compose up -d && docker attach babyagi
 **注意：Ctrl+Cで終了してもDocker Desktopなどでコンテナ停止しないと停止しなくなりました。ご注意ください。**
 
 **注意：目的を達成できず、ループし続けることがあります。OpenAI API の使用料にご注意ください。**
+
+```workspace```フォルダにAIの生成物が作成されていきます。
 
 失敗した場合は、再度実行すれば途中から再開できます。
 

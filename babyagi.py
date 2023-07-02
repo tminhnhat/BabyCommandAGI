@@ -371,6 +371,23 @@ def openai_call(
         else:
             break
 
+# Global variable for flagging input
+input_flag = None
+
+def check_input():
+    global input_flag
+    while True:
+        time.sleep(2)
+        if input_flag == 'f':
+            continue
+        log("\n" + "\033[33m\033[1m" + 'The state has been set so that if you input "f", it will go to feedback.' + "\033[0m\033[0m" + "\n")
+        inp = input()
+        if inp == 'f':
+            input_flag = 'f'
+
+# Thread for non-blocking input check
+input_thread = threading.Thread(target=check_input, daemon=True)
+input_thread.start()
 def task_creation_agent(
         objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
@@ -856,7 +873,7 @@ def user_feedback() -> str:
     log("\033[33m\033[1m" + "*****USER FEEDBACK*****\n\n" + "\033[0m\033[0m")
 
     # Ask the user in English
-    log('Has your OBJECTIVE been achieved? If yes, please enter "y". If not, please enter "feedback" to the AI on how the OBJECTIVE can be achieved: \n')
+    log('Please enter feedback to the AI on how the OBJECTIVE can be achieved. The AI will continue to execute based on feedback: \n')
     response = input()
     log('\n')
 
@@ -877,28 +894,9 @@ if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
 
 pty_master = None
 
-# Global variable for flagging input
-input_flag = None
-
-def check_input():
-    global input_flag
-    while True:
-        time.sleep(3)
-        if input_flag == 'f':
-            continue
-        log("\n" + "\033[33m\033[1m" + 'The state has been set so that if you input "f", it will go to feedback.' + "\033[0m\033[0m" + "\n")
-        inp = input()
-        if inp == 'f':
-            input_flag = 'f'
-
-# Thread for non-blocking input check
-input_thread = threading.Thread(target=check_input, daemon=True)
-input_thread.start()
-
 def main():
     global OBJECTIVE
     global input_flag
-    input_flag = None
 
     current_dir = WORKSPACE_FOLDER
     if os.path.isfile(PWD_FILE):
@@ -1077,18 +1075,21 @@ def main():
 
     log("\033[92m\033[1m" + "*****COMPLETE*****\n\n" + "\033[0m\033[0m")
     while True:
+        if input_flag != "f":
+            log("\n" + "\033[33m\033[1m" + 'If the OBJECTIVE has not been achieved, please input "f". The AI will continue to execute based on the feedback.' + "\033[0m\033[0m" + "\n")
+            while True:
+                time.sleep(1)
+                if input_flag == "f":
+                    break
         feedback = user_feedback()
-        if feedback != 'y':
-            objective_list = deque([ORIGINAL_OBJECTIVE, feedback])
-            save_data(objective_list, OBJECTIVE_LIST_FILE)
-            OBJECTIVE = parse_objective(objective_list)
-            tasks_storage.appendleft({"type": "plan", "content": feedback})
-            save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
-            main()
-            break
-        log("\033[92m\033[1m" + "*****OBJECTIVE ACHIEVED*****\n\n" + "\033[0m\033[0m")
-        time.sleep(100)
-
+        objective_list = deque([ORIGINAL_OBJECTIVE, feedback])
+        save_data(objective_list, OBJECTIVE_LIST_FILE)
+        OBJECTIVE = parse_objective(objective_list)
+        tasks_storage.appendleft({"type": "plan", "content": feedback})
+        save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+        input_flag = None
+        main()
+        break
 
 if __name__ == "__main__":
     main()

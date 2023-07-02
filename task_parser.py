@@ -4,7 +4,7 @@ class TaskParser:
 
     def test(self):
         test_input = """type: command
-path: /app/
+path: /app/workspace/
 ```bash
 sudo apt-get update
 sudo apt-get install git
@@ -12,7 +12,7 @@ git clone https://github.com/flutter/flutter.git
 ```
 
 type: command
-path: /app/
+path: /app/workspace/
 ```bash
 cd flutter
 ./bin/flutter doctor
@@ -20,14 +20,14 @@ export PATH="$PATH:`pwd`/bin"
 ```
 
 type: command
-path: /app/
+path: /app/workspace/
 ```bash
-cd /app
+cd /app/workspace
 flutter create my_flutter_app
 ```
 
 type: command
-path: /app/
+path: /app/workspace/
 ```bash
 flutter channel beta
 flutter upgrade
@@ -35,7 +35,7 @@ flutter config --enable-web
 ```
 
 type: command
-path: /app/
+path: /app/workspace/
 ```bash
 cd my_flutter_app
 flutter run -d web-server --web-port=8080
@@ -54,11 +54,11 @@ WORKDIR /app
 
 RUN git clone https://github.com/flutter/flutter.git
 
-ENV PATH="/app/flutter/bin:${PATH}"
+ENV PATH="/app/workspace/flutter/bin:${PATH}"
 
 RUN flutter doctor
 
-RUN cd /app && flutter create my_flutter_app
+RUN cd /app/workspace && flutter create my_flutter_app
 
 RUN flutter channel beta && flutter upgrade && flutter config --enable-web
 
@@ -73,7 +73,7 @@ Configure the container to expose port 8080 to the host machine and access the a
 ```
 
 type: write
-path: /app/othello_app/lib/main.dart
+path: /app/workspace/othello_app/lib/main.dart
 ```dart
 import 'package:flutter/material.dart';
 

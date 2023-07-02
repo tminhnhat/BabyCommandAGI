@@ -29,7 +29,7 @@ import threading
 #    time.sleep(100)
 
 # Engine configuration
-BABY_COMMAND_AGI_FOLDER = "/app"
+BABY_COMMAND_AGI_FOLDER = "/app/workspace"
 
 # Model: GPT, LLAMA, HUMAN, etc.
 LLM_MODEL = os.getenv("LLM_MODEL", os.getenv("OPENAI_API_MODEL", "gpt-4")).lower()
@@ -395,12 +395,12 @@ The following is the execution result of the last planned task.
 
 # Example of tasks output
 type: write
-path: /app/requirements.txt
+path: /app/workspace/requirements.txt
 ```
 dataclasses
 ```
 type: command
-path: /app/
+path: /app/workspace/
 ```bash
 pip install -r requirements.txt
 source venv/bin/activate
@@ -410,7 +410,7 @@ type: plan
 Designing a Minesweeper.
 ```
 type: write
-path: /app/minesweeper.py
+path: /app/workspace/minesweeper.py
 ```python
 from board import Board
 
@@ -504,12 +504,12 @@ Below is the result of the last execution."""
 
 # Example of tasks output
 type: write
-path: /app/requirements.txt
+path: /app/workspace/requirements.txt
 ```
 dataclasses
 ```
 type: command
-path: /app/
+path: /app/workspace/
 ```bash
 pip install -r requirements.txt
 source venv/bin/activate
@@ -519,7 +519,7 @@ type: plan
 Designing a Minesweeper.
 ```
 type: write
-path: /app/minesweeper.py
+path: /app/workspace/minesweeper.py
 ```python
 from board import Board
 
@@ -587,12 +587,12 @@ Based on the following OBJECTIVE, you will perform one task and absolutely outpu
 
 # Example of output
 type: write
-path: /app/requirements.txt
+path: /app/workspace/requirements.txt
 ```
 dataclasses
 ```
 type: command
-path: /app/
+path: /app/workspace/
 ```bash
 pip install -r requirements.txt
 source venv/bin/activate
@@ -602,7 +602,7 @@ type: plan
 Designing a Minesweeper.
 ```
 type: write
-path: /app/minesweeper.py
+path: /app/workspace/minesweeper.py
 ```python
 from board import Board
 

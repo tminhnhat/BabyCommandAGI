@@ -927,6 +927,10 @@ def main():
                         path = task['path']
                         content = task['content']
 
+                        # Ensure that results are not ignored.
+                        if path.endswith(".sh"):
+                            content = content.replace(" || true", "")
+
                         write_file(path, content)
 
                         log("path: " + path + "\n\n")
@@ -938,7 +942,7 @@ def main():
                         enriched_result = {
                             "type": "write",
                             "target": path,
-                            "result": task['content']
+                            "result": content
                             }
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
@@ -987,6 +991,7 @@ def main():
                                 break
                             commands = deque(content.split("\n"))
                             command = commands.popleft()
+                            # Ensure that results are not ignored.
                             if command.endswith(" || true"):
                                 command = command[:-8]
                             all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),

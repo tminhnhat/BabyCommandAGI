@@ -370,24 +370,6 @@ def openai_call(
         else:
             break
 
-# Global variable for flagging input
-input_flag = None
-
-def check_input():
-    global input_flag
-    while True:
-        time.sleep(2)
-        if input_flag == 'f':
-            continue
-        log("\n" + "\033[33m\033[1m" + 'The state has been set so that if you input "f", it will go to feedback.' + "\033[0m\033[0m" + "\n")
-        inp = input()
-        if inp == 'f':
-            input_flag = 'f'
-
-# Thread for non-blocking input check
-input_thread = threading.Thread(target=check_input, daemon=True)
-input_thread.start()
-
 def task_creation_agent(
         objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
@@ -894,9 +876,29 @@ if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
 
 pty_master = None
 
+# Global variable for flagging input
+input_flag = None
+
+def check_input():
+    global input_flag
+    while True:
+        time.sleep(3)
+        if input_flag == 'f':
+            continue
+        log("\n" + "\033[33m\033[1m" + 'The state has been set so that if you input "f", it will go to feedback.' + "\033[0m\033[0m" + "\n")
+        inp = input()
+        if inp == 'f':
+            input_flag = 'f'
+
+# Thread for non-blocking input check
+input_thread = threading.Thread(target=check_input, daemon=True)
+input_thread.start()
+
 def main():
     global OBJECTIVE
     global input_flag
+    input_flag = None
+
     current_dir = BABY_COMMAND_AGI_FOLDER
     if os.path.isfile(PWD_FILE):
         with open(PWD_FILE, "r") as pwd_file:
@@ -1081,7 +1083,6 @@ def main():
             OBJECTIVE = parse_objective(objective_list)
             tasks_storage.appendleft({"type": "plan", "content": feedback})
             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
-            input_flag = None
             main()
             break
         log("\033[92m\033[1m" + "*****OBJECTIVE ACHIEVED*****\n\n" + "\033[0m\033[0m")

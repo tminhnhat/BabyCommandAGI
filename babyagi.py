@@ -29,7 +29,8 @@ import threading
 #    time.sleep(100)
 
 # Engine configuration
-BABY_COMMAND_AGI_FOLDER = "/app/workspace"
+BABY_COMMAND_AGI_FOLDER = "/app"
+WORKSPACE_FOLDER = "/app/workspace"
 
 # Model: GPT, LLAMA, HUMAN, etc.
 LLM_MODEL = os.getenv("LLM_MODEL", os.getenv("OPENAI_API_MODEL", "gpt-4")).lower()
@@ -899,7 +900,7 @@ def main():
     global input_flag
     input_flag = None
 
-    current_dir = BABY_COMMAND_AGI_FOLDER
+    current_dir = WORKSPACE_FOLDER
     if os.path.isfile(PWD_FILE):
         with open(PWD_FILE, "r") as pwd_file:
             current_dir = pwd_file.read().strip()

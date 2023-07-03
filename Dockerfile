@@ -11,6 +11,8 @@ RUN apt-get install gcc-11 g++-11 -y
 COPY requirements.txt /tmp/requirements.txt
 RUN CXX=g++-11 CC=gcc-11 pip install -r requirements.txt
 
+WORKDIR /workspace
+COPY ./workspace /workspace
 WORKDIR /app
 COPY . /app
 ENTRYPOINT ["./babyagi.py"]

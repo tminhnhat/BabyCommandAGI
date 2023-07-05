@@ -992,8 +992,7 @@ def main():
                             commands = deque(content.split("\n"))
                             command = commands.popleft()
                             # Ensure that results are not ignored.
-                            if command.endswith(" || true"):
-                                command = command[:-8]
+                            command = command.replace(" || true", "")
                             all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
                             result = analyze_command_result(all_result)

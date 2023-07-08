@@ -993,6 +993,8 @@ def main():
                             command = commands.popleft()
                             # Ensure that results are not ignored.
                             command = command.replace(" || true", "")
+                            # Remove "sudo" because "docker attach" probably does not read output executed by "sudo".
+                            command = command.replace("sudo ", "")
                             all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
                             result = analyze_command_result(all_result)

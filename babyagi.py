@@ -667,11 +667,13 @@ def list_std_blocks(target_list: list) -> list[str]:
     if target_list:
         for read in target_list:
             buffer = bytes()
-            while True:
+            is_target_list_break = True
+            while is_target_list_break:
                 try:
                     # Try to decode the entire buffer
                     chunk = os.read(read, 1024)
                 except OSError:
+                    is_target_list_break = False
                     break
 
                 if not chunk:

@@ -662,6 +662,46 @@ Please never output anything other than a "Example of output" format that always
         log("\nRetry\n\n")
         return plan_agent(objective, task, executed_task_list, current_dir)
 
+def list_std_blocks(target_list: list) -> list[str]:
+    std_blocks = []
+    if target_list:
+        for read in target_list:
+            buffer = bytes()
+            while True:
+                try:
+                    # Try to decode the entire buffer
+                    chunk = os.read(read, 1024)
+                except OSError:
+                    break
+
+                if not chunk:
+                    # Nothing more to read
+                    break
+
+                buffer += chunk
+                while buffer:
+                    try:
+                        # Try to decode the entire buffer
+                        text = buffer.decode('utf8')
+                        buffer = bytes()
+                    except UnicodeDecodeError as e:
+                        if e.reason == 'unexpected end of data':
+                            # Need more data
+                            break
+                        else:
+                            # Something else happened. Depending on your needs, you might want
+                            # to break and re-raise the exception, or skip this character,
+                            # or replace it, or something else.
+                            log(f"\nUnicodeDecodeError:\n {e}\n\n")
+                            raise
+                    else:
+                        output_block = text
+                        if output_block:
+                            print(output_block, end="")
+                            std_blocks.append(output_block)
+
+    return std_blocks
+
 # Execute a task based on the objective and five previous tasks
 def execution_command(objective: str, command: str, task_list: deque,
                       executed_task_list: deque, current_dir: str) -> str:
@@ -732,42 +772,9 @@ def execution_command(objective: str, command: str, task_list: deque,
         # Check for output with a timeout of some minutes
         rlist, wlist, xlist = select.select([pty_master], [], [], 2)
         if rlist or wlist or xlist:
-            if rlist:
-                for read in rlist:
-                    try:
-                        output_block = os.read(read, 1024).decode()
-                    except OSError:
-                        break
-
-                    if output_block:
-                        print(output_block, end="")
-                        std_blocks.append(output_block)
-
-            if wlist:
-                for read in wlist:
-                    try:
-                        output_block = os.read(read, 1024).decode()
-                    except OSError:
-                        # Break the loop if OSError occurs
-                        log("\nOSError wlist\n\n")
-                        break
-
-                    if output_block:
-                        print(output_block, end="")
-                        std_blocks.append(output_block)
-
-            if xlist:
-                for read in xlist:
-                    try:
-                        output_block = os.read(read, 1024).decode()
-                    except OSError:
-                        # Break the loop if OSError occurs
-                        log("\nOSError xlist\n\n")
-                        break
-
-                    if output_block:
-                        print(output_block, end="")
-                        std_blocks.append(output_block)
+            std_blocks.extend(list_std_blocks(rlist))
+            std_blocks.extend(list_std_blocks(wlist))
+            std_blocks.extend(list_std_blocks(xlist))
 
         else:
             if USER_INPUT_LLM:

@@ -665,15 +665,15 @@ Please never output anything other than a "Example of output" format that always
 def list_std_blocks(target_list: list) -> list[str]:
     std_blocks = []
     if target_list:
+        is_target_list_break = False
         for read in target_list:
             buffer = bytes()
-            is_target_list_break = True
-            while is_target_list_break:
+            while True:
                 try:
                     # Try to decode the entire buffer
                     chunk = os.read(read, 1024)
-                except OSError:
-                    is_target_list_break = False
+                except:
+                    is_target_list_break = True
                     break
 
                 if not chunk:
@@ -681,6 +681,7 @@ def list_std_blocks(target_list: list) -> list[str]:
                     break
 
                 buffer += chunk
+                is_read_break = False
                 while buffer:
                     try:
                         # Try to decode the entire buffer
@@ -701,6 +702,14 @@ def list_std_blocks(target_list: list) -> list[str]:
                         if output_block:
                             print(output_block, end="")
                             std_blocks.append(output_block)
+                        is_read_break = True
+                        break
+                
+                if is_read_break == True:
+                    break
+            
+            if is_target_list_break == True:
+                break
 
     return std_blocks
 

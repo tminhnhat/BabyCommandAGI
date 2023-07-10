@@ -117,5 +117,5 @@ I am a novice, I cannot speak English, and I barely know cultures outside of Jap
   The maintenance of this project is made possible thanks to all of the following sponsors. If you'd like to become a sponsor and have your avatar logo displayed below, please <a href="https://github.com/sponsors/saten-private">click here</a>. 💖 You can become a sponsor for $5.
 </p>
 <p align="center">
-<!-- sponsors --><a href="https://github.com/azuss-p"><img src="https://github.com/azuss-p.png" width="60px" alt="" /></a><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/azuss-p"><img src="https://github.com/azuss-p.png" width="60px" alt="azuss-p" /></a><!-- sponsors -->
 </p>

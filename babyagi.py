@@ -52,7 +52,7 @@ COOPERATIVE_MODE = "none"
 USER_INPUT_LLM = True
 JOIN_EXISTING_OBJECTIVE = False
 MAX_TOKEN = 20000
-MAX_STRING_LENGTH = 24000
+MAX_STRING_LENGTH = 18000
 MAX_COMMAND_RESULT_LENGTH = 2500
 
 # Goal configuration
@@ -212,7 +212,11 @@ log("\033[94m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
 log(f"{OBJECTIVE}")
 
 # Configure OpenAI
+OPENROUTER_REFERRER = "https://github.com/saten-private/BabyCommandAGI"
+OPENROUTER_BASE = "https://openrouter.ai"
+OPENROUTER_API_BASE = f"{OPENROUTER_BASE}/api/v1"
 openai.api_key = OPENAI_API_KEY
+openai.api_base = OPENROUTER_API_BASE
 
 # Task storage supporting only a single instance of BabyAGI
 class SingleTaskListStorage:
@@ -309,28 +313,29 @@ def openai_call(
                 return result['choices'][0]['text'].strip()
             elif model.lower().startswith("human"):
                 return user_input_await(prompt)
-            elif not model.lower().startswith("gpt-"):
-                # Use completion API
-                response = openai.Completion.create(
-                    engine=model,
-                    prompt=prompt,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    top_p=1,
-                    frequency_penalty=0,
-                    presence_penalty=0,
-                )
-                return response.choices[0].text.strip()
+            # elif not model.lower().startswith("gpt-"):
+            #     # Use completion API
+            #     response = openai.Completion.create(
+            #         engine=model,
+            #         prompt=prompt,
+            #         temperature=temperature,
+            #         max_tokens=max_tokens,
+            #         top_p=1,
+            #         frequency_penalty=0,
+            #         presence_penalty=0,
+            #     )
+            #     return response.choices[0].text.strip()
             else:
                 # Use 8000 instead of the real limit (8194) to give a bit of wiggle room for the encoding of roles.
                 # TODO: different limits for different models.
 
-                trimmed_prompt = limit_tokens_from_string(prompt, model, 8000 - max_tokens)
+                #trimmed_prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
 
                 # Use chat completion API
-                messages = [{"role": "system", "content": trimmed_prompt}]
+                messages = [{"role": "system", "content": prompt}]
                 response = openai.ChatCompletion.create(
                     model=model,
+                    headers={"HTTP-Referer": OPENROUTER_REFERRER},
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
@@ -342,7 +347,7 @@ def openai_call(
             log(
                 "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"
             )
-            time.sleep(10)  # Wait 10 seconds and try again
+            time.sleep(300)  # Wait 10 seconds and try again
         except openai.error.Timeout:
             log(
                 "   *** OpenAI API timeout occurred. Waiting 10 seconds and trying again. ***"
@@ -404,7 +409,7 @@ The following is the execution result of the last planned task.
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
@@ -516,7 +521,7 @@ Below is the result of the last execution."""
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
@@ -599,7 +604,7 @@ Based on the following OBJECTIVE, Before you begin the following single task, pl
 # List of most recently executed results
 {ExecutedTaskParser().encode(executed_task_list)}"""
     
-    prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
@@ -843,7 +848,7 @@ Otherwise, please output only 'BabyCommandAGI: Continue'.
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = prompt[:MAX_STRING_LENGTH]
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
@@ -966,8 +971,8 @@ def main():
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             
                         # Keep only the most recent 30 tasks
-                        if len(executed_tasks_storage.get_tasks()) > 30:
-                            executed_tasks_storage.pop()
+                        # if len(executed_tasks_storage.get_tasks()) > 30:
+                        #     executed_tasks_storage.pop()
 
                         if tasks_storage.is_empty():
                             break
@@ -1000,8 +1005,8 @@ def main():
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             # Keep only the most recent 30 tasks
-                            if len(executed_tasks_storage.get_tasks()) > 30:
-                                executed_tasks_storage.pop()
+                            # if len(executed_tasks_storage.get_tasks()) > 30:
+                            #     executed_tasks_storage.pop()
 
                         while True:
                             content = task['content'].strip()
@@ -1032,8 +1037,8 @@ def main():
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 # Keep only the most recent 30 tasks
-                                if len(executed_tasks_storage.get_tasks()) > 30:
-                                    executed_tasks_storage.pop()
+                                # if len(executed_tasks_storage.get_tasks()) > 30:
+                                #     executed_tasks_storage.pop()
 
                                 is_complete = True
                                 break
@@ -1043,8 +1048,8 @@ def main():
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 # Keep only the most recent 30 tasks
-                                if len(executed_tasks_storage.get_tasks()) > 30:
-                                    executed_tasks_storage.pop()
+                                # if len(executed_tasks_storage.get_tasks()) > 30:
+                                #     executed_tasks_storage.pop()
 
                                 is_check_result = True
                                 break
@@ -1053,8 +1058,8 @@ def main():
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             # Keep only the most recent 30 tasks
-                            if len(executed_tasks_storage.get_tasks()) > 30:
-                                executed_tasks_storage.pop()
+                            # if len(executed_tasks_storage.get_tasks()) > 30:
+                            #     executed_tasks_storage.pop()
 
                             task = tasks_storage.popleft()
 

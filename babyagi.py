@@ -51,8 +51,8 @@ COOPERATIVE_MODE = "none"
 # but be aware that this will increase the number of times the LLM is used and increase the cost of the API, etc.
 USER_INPUT_LLM = True
 JOIN_EXISTING_OBJECTIVE = False
-MAX_TOKEN = 20000
-MAX_STRING_LENGTH = 18000
+MAX_TOKEN = 5000
+MAX_STRING_LENGTH = 6000
 MAX_COMMAND_RESULT_LENGTH = 2500
 
 # Goal configuration
@@ -212,11 +212,7 @@ log("\033[94m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
 log(f"{OBJECTIVE}")
 
 # Configure OpenAI
-OPENROUTER_REFERRER = "https://github.com/saten-private/BabyCommandAGI"
-OPENROUTER_BASE = "https://openrouter.ai"
-OPENROUTER_API_BASE = f"{OPENROUTER_BASE}/api/v1"
 openai.api_key = OPENAI_API_KEY
-openai.api_base = OPENROUTER_API_BASE
 
 # Task storage supporting only a single instance of BabyAGI
 class SingleTaskListStorage:
@@ -313,6 +309,7 @@ def openai_call(
                 return result['choices'][0]['text'].strip()
             elif model.lower().startswith("human"):
                 return user_input_await(prompt)
+            # Comment out for Open Router.
             # elif not model.lower().startswith("gpt-"):
             #     # Use completion API
             #     response = openai.Completion.create(
@@ -335,7 +332,6 @@ def openai_call(
                 messages = [{"role": "system", "content": prompt}]
                 response = openai.ChatCompletion.create(
                     model=model,
-                    headers={"HTTP-Referer": OPENROUTER_REFERRER},
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,

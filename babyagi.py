@@ -1121,7 +1121,7 @@ def main():
                 if input_flag == "f":
                     break
         feedback = user_feedback()
-        objective_list = deque([ORIGINAL_OBJECTIVE, feedback])
+        objective_list = deque([feedback, ORIGINAL_OBJECTIVE])
         save_data(objective_list, OBJECTIVE_LIST_FILE)
         OBJECTIVE = parse_objective(objective_list)
         tasks_storage.appendleft({"type": "plan", "content": feedback})

@@ -51,8 +51,8 @@ COOPERATIVE_MODE = "none"
 # but be aware that this will increase the number of times the LLM is used and increase the cost of the API, etc.
 USER_INPUT_LLM = True
 JOIN_EXISTING_OBJECTIVE = False
-MAX_TOKEN = 4000
-MAX_STRING_LENGTH = 3800
+MAX_OUTPUT_TOKEN = 4000
+MAX_INPUT_TOKEN = 3800
 MAX_COMMAND_RESULT_LENGTH = 2500
 
 # Goal configuration
@@ -301,7 +301,7 @@ def openai_call(
     prompt: str,
     model: str = LLM_MODEL,
     temperature: float = OPENAI_TEMPERATURE,
-    max_tokens: int = MAX_TOKEN,
+    max_tokens: int = MAX_OUTPUT_TOKEN,
 ):
     while True:
         try:
@@ -337,7 +337,7 @@ def openai_call(
                 # Use 8000 instead of the real limit (8194) to give a bit of wiggle room for the encoding of roles.
                 # TODO: different limits for different models.
 
-                #trimmed_prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
+                #trimmed_prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
 
                 # Use chat completion API
                 messages = [{"role": "system", "content": prompt}]
@@ -416,7 +416,7 @@ The following is the execution result of the last planned task.
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
@@ -528,7 +528,7 @@ Below is the result of the last execution."""
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
@@ -611,7 +611,7 @@ Based on the following OBJECTIVE, Before you begin the following single task, pl
 # List of most recently executed results
 {ExecutedTaskParser().encode(executed_task_list)}"""
     
-    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
@@ -855,7 +855,7 @@ Otherwise, please output only 'BabyCommandAGI: Continue'.
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_STRING_LENGTH)
+    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 

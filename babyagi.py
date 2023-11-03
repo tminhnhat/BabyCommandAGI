@@ -243,6 +243,17 @@ class SingleTaskListStorage:
     def get_tasks(self):
         return self.tasks
 
+    def remove_target_write_dicts(self, path):
+        """
+        Remove dictionaries from the list where "target" key matches path and "type" key is "write".
+
+        Args:
+        - path (str): The target path to match against.
+    
+        """
+        self.tasks = deque([d for d in self.tasks if not (d.get("target") == path and d.get("type") == "write")])
+        
+
 # Task list
 temp_task_list = load_data(TASK_LIST_FILE) #deque([])
 temp_executed_task_list = load_data(EXECUTED_TASK_LIST_FILE) #deque([])
@@ -963,6 +974,7 @@ def main():
                             "target": path,
                             "result": content
                             }
+                        executed_tasks_storage.remove_target_write_dicts(path)
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             

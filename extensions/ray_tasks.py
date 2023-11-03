@@ -40,6 +40,17 @@ class CooperativeTaskListStorageActor:
 
     def get_tasks(self):
         return self.tasks
+    
+    def remove_target_write_dicts(self, path):
+        """
+        Remove dictionaries from the list where "target" key matches path and "type" key is "write".
+
+        Args:
+        - path (str): The target path to match against.
+    
+        """
+        self.tasks = deque([d for d in self.tasks if not (d.get("target") == path and d.get("type") == "write")])
+
 
 class CooperativeTaskListStorage:
     def __init__(self, name: str, task_list: deque):

@@ -51,8 +51,8 @@ COOPERATIVE_MODE = "none"
 # but be aware that this will increase the number of times the LLM is used and increase the cost of the API, etc.
 USER_INPUT_LLM = True
 JOIN_EXISTING_OBJECTIVE = False
-MAX_OUTPUT_TOKEN = 4000
-MAX_INPUT_TOKEN = 3800
+MAX_OUTPUT_TOKEN = 64000
+MAX_INPUT_TOKEN = 63800
 MAX_COMMAND_RESULT_LENGTH = 2500
 
 # Goal configuration

@@ -502,6 +502,15 @@ Below is the result of the last execution."""
 # Content written to file
 {enriched_result["result"]}"""
         
+    elif enriched_result["type"].startswith("fail_write_for_invalide_content"):
+        prompt += f"""
+        
+# Pass that I tried to write but failed.
+{enriched_result["target"]}
+
+# Invalid content that fails to write
+{enriched_result["result"]}"""
+        
     elif enriched_result["type"].startswith("command"):
         prompt += f"""
 
@@ -510,7 +519,6 @@ Below is the result of the last execution."""
 
 # Command executed most recently
 {enriched_result["target"]}
-
 
 # Result of last command executed
 {enriched_result["result"]}"""
@@ -961,10 +969,27 @@ def main():
                         if path.endswith(".sh"):
                             content = content.replace(" || true", "")
 
-                        write_file(path, content)
-
                         log("path: " + path + "\n\n")
                         log(content + "\n\n")
+
+                        # If it starts with a comment, make it invalid content since it is often a differential update, etc.
+                        if content.startswith("// ") or content.startswith("# "):
+
+                            log("*INVALID CONTENT*")
+
+                            # Step 2: Enrich result and store
+                            save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+
+                            enriched_result = {
+                                "type": "fail_write_for_invalide_content",
+                                "target": path,
+                                "result": content
+                                }
+                            executed_tasks_storage.appendleft(enriched_result)
+                            save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                            break
+
+                        write_file(path, content)
 
                         # Step 2: Enrich result and store
                         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
@@ -977,11 +1002,11 @@ def main():
                         executed_tasks_storage.remove_target_write_dicts(path)
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                            
+                                
                         # Keep only the most recent 30 tasks
                         # if len(executed_tasks_storage.get_tasks()) > 30:
                         #     executed_tasks_storage.pop()
-
+                            
                         if tasks_storage.is_empty():
                             break
                         else:

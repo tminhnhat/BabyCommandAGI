@@ -413,6 +413,9 @@ def openai_call(
 
                 separated_content = separate_markdown(prompt) # for Vision API
                 if len(separated_content) > 1:
+
+                    log(f"【MODEL】:{LLM_VISION_MODEL}")
+
                     messages = [
                         {
                             "role": "system",
@@ -432,6 +435,9 @@ def openai_call(
                         # stop=None, for Vision API
                     )
                 else:
+
+                    log(f"【MODEL】:{model}")
+
                     messages = [{"role": "system", "content": prompt}]
                     response = openai.ChatCompletion.create(
                         model=model,

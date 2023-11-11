@@ -24,6 +24,7 @@ import sys
 import threading
 import base64
 import requests
+import json
 
 #[Test]
 #TaskParser().test()
@@ -411,38 +412,31 @@ def openai_call(
 
                 #trimmed_prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
 
-                # Use chat completion API
-
-                separated_content = separate_markdown(prompt)
-
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {api_key}"
-                }
-
-                payload = {
-                    "model": {model},
-                    "messages": [
-                    {
-                        "role": "user",
-                        "content": {modify_parts_to_new_format(separated_content)}
-                    }
-                    ],
-                    "max_tokens": {max_tokens}
-                }
-
-                response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-
                 # messages = [{"role": "system", "content": prompt}]
-                # response = openai.ChatCompletion.create(
-                #     model=model,
-                #     messages=messages,
-                #     temperature=temperature,
-                #     max_tokens=max_tokens,
-                #     n=1,
-                #     stop=None,
-                # )
-                # return response.choices[0].message.content.strip()
+                separated_content = separate_markdown(prompt) # for Vision API
+                messages = [
+                    {
+                        "role": "system",
+                        "content": modify_parts_to_new_format(separated_content)
+                    }
+                ]
+
+                # log("【MESSAGES】")
+                # log(json.dumps(messages))
+
+                response = openai.ChatCompletion.create(
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    n=1,
+                    # stop=None, for Vision API
+                )
+
+                log("【RESPONSE】")
+                log(response)
+
+                return response.choices[0].message.content.strip()
         except openai.error.RateLimitError:
             log(
                 "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"

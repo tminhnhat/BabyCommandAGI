@@ -34,7 +34,8 @@ BABY_COMMAND_AGI_FOLDER = "/app"
 WORKSPACE_FOLDER = "/workspace"
 
 # Model: GPT, LLAMA, HUMAN, etc.
-LLM_MODEL = os.getenv("LLM_MODEL", os.getenv("OPENAI_API_MODEL", "gpt-4")).lower()
+LLM_MODEL = os.getenv("LLM_MODEL", os.getenv("OPENAI_API_MODEL", "gpt-4-1106-preview")).lower()
+LLM_VISION_MODEL = os.getenv("LLM_VISION_MODEL", os.getenv("OPENAI_API_VISION_MODEL", "gpt-4-vision-preview")).lower()
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -410,26 +411,37 @@ def openai_call(
 
                 #trimmed_prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
 
-                # messages = [{"role": "system", "content": prompt}]
                 separated_content = separate_markdown(prompt) # for Vision API
-                messages = [
-                    {
-                        "role": "system",
-                        "content": modify_parts_to_new_format(separated_content)
-                    }
-                ]
+                if len(separated_content) > 1:
+                    messages = [
+                        {
+                            "role": "system",
+                            "content": modify_parts_to_new_format(separated_content)
+                        }
+                    ]
 
-                # log("【MESSAGES】")
-                # log(json.dumps(messages))
+                    # log("【MESSAGES】")
+                    # log(json.dumps(messages))
 
-                response = openai.ChatCompletion.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    n=1,
-                    # stop=None, for Vision API
-                )
+                    response = openai.ChatCompletion.create(
+                        model=LLM_VISION_MODEL,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        n=1,
+                        # stop=None, for Vision API
+                    )
+                else:
+                    messages = [{"role": "system", "content": prompt}]
+                    response = openai.ChatCompletion.create(
+                        model=model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        n=1,
+                        stop=None
+                    )
+
                 return response.choices[0].message.content.strip()
         except openai.error.RateLimitError:
             log(

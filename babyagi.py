@@ -22,6 +22,8 @@ from task_parser import TaskParser
 from executed_task_parser import ExecutedTaskParser
 import sys
 import threading
+import base64
+import requests
 
 #[Test]
 #TaskParser().test()
@@ -296,6 +298,76 @@ def limit_tokens_from_string(string: str, model: str, limit: int) -> str:
 
     return encoding.decode(encoded[:limit])
 
+def separate_markdown(markdown):
+    """
+    Separates a markdown string into images and text parts.
+
+    Images are identified and categorized as local files or URLs.
+    Local files are represented with a dictionary containing path and description.
+    URLs are represented with a dictionary containing URL and description.
+    Text parts are returned as strings.
+
+    Args:
+    markdown (str): The Markdown string to be processed.
+
+    Returns:
+    list: A list containing separated parts of the Markdown content.
+    """
+    # Regex patterns for identifying images and splitting content
+    image_pattern = r'!\[(.*?)\]\((.*?)\)'
+    split_pattern = r'(!\[.*?\]\(.*?\))'
+
+    # Split the markdown content
+    parts = re.split(split_pattern, markdown)
+
+    # Process each part to categorize as image or text
+    result = []
+    for part in parts:
+        # Check if the part is an image
+        match = re.match(image_pattern, part)
+        if match:
+            description, path_or_url = match.groups()
+            # Check if it's a local file or a URL
+            if path_or_url.startswith('http://') or path_or_url.startswith('https://'):
+                result.append({'url': path_or_url, 'description': description})
+            else:
+                result.append({'path': path_or_url, 'description': description})
+        else:
+            # If not an image, it's a text part
+            if part.strip():
+                result.append(part)
+
+    return result
+
+def encode_image(image_path):
+    """ Encodes a local image file to base64 """
+    with open(image_path, 'rb') as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode()
+    return encoded_string
+
+def modify_parts_to_new_format(parts):
+    """
+    Modifies the given array of Markdown parts to a new specified format.
+
+    Args:
+    parts (list): A list containing separated parts of Markdown content including images and text.
+
+    Returns:
+    list: A list of parts in the new specified format.
+    """
+    new_format_parts = []
+
+    for part in parts:
+        if isinstance(part, str):  # Text part
+            new_format_parts.append({"type": "text", "text": part})
+        elif isinstance(part, dict):
+            if 'url' in part:  # Image with URL
+                new_format_parts.append({"type": "image_url", "image_url": {"url": part['url']}})
+            elif 'path' in part:  # Local image file
+                base64_image = encode_image(part['path'])
+                new_format_parts.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
+
+    return new_format_parts
 
 def openai_call(
     prompt: str,
@@ -340,16 +412,37 @@ def openai_call(
                 #trimmed_prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
 
                 # Use chat completion API
-                messages = [{"role": "system", "content": prompt}]
-                response = openai.ChatCompletion.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    n=1,
-                    stop=None,
-                )
-                return response.choices[0].message.content.strip()
+
+                separated_content = separate_markdown(prompt)
+
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {api_key}"
+                }
+
+                payload = {
+                    "model": {model},
+                    "messages": [
+                    {
+                        "role": "user",
+                        "content": {modify_parts_to_new_format(separated_content)}
+                    }
+                    ],
+                    "max_tokens": {max_tokens}
+                }
+
+                response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+
+                # messages = [{"role": "system", "content": prompt}]
+                # response = openai.ChatCompletion.create(
+                #     model=model,
+                #     messages=messages,
+                #     temperature=temperature,
+                #     max_tokens=max_tokens,
+                #     n=1,
+                #     stop=None,
+                # )
+                # return response.choices[0].message.content.strip()
         except openai.error.RateLimitError:
             log(
                 "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"

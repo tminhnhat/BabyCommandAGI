@@ -23,8 +23,6 @@ from executed_task_parser import ExecutedTaskParser
 import sys
 import threading
 import base64
-import requests
-import json
 
 #[Test]
 #TaskParser().test()
@@ -432,10 +430,6 @@ def openai_call(
                     n=1,
                     # stop=None, for Vision API
                 )
-
-                log("【RESPONSE】")
-                log(response)
-
                 return response.choices[0].message.content.strip()
         except openai.error.RateLimitError:
             log(

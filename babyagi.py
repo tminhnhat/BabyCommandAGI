@@ -608,7 +608,9 @@ Below is the result of the last execution."""
 {enriched_result["target"]}
 
 # Invalid content that fails to write
-{enriched_result["result"]}"""
+```
+{enriched_result["result"]}
+```"""
         
     elif enriched_result["type"].startswith("command"):
         prompt += f"""

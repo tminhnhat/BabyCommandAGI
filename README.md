@@ -23,9 +23,14 @@ Below are some known useful use cases.
 
 ## Automatic Programming
 
-- Create an app automatically just by providing feedback
+Create an app automatically just by providing feedback
 
-https://twitter.com/saten_work/status/1674855573412810753
+### Programming Examples
+
+- Reversi
+https://x.com/saten_work/status/1674855573412810753
+- Snake Game
+https://x.com/saten_work/status/1723509089471492563
 
 ## Automatic Environment Setup
 

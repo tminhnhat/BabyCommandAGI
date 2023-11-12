@@ -1081,7 +1081,9 @@ def main():
     new_tasks_list = []
     while True:
         # As long as there are tasks in the storage...
-        if tasks_storage:
+        if len(tasks_storage.get_tasks()) == 0:
+            break
+        else:
             # Step 1: Pull the first task
             task = tasks_storage.popleft()
             log("\033[92m\033[1m" + "*****NEXT TASK*****\n\n" + "\033[0m\033[0m")
@@ -1259,6 +1261,9 @@ def main():
                     break
                 if is_next_plan:
                     continue
+                if not "type" in enriched_result:
+                    continue
+
 
                 # Step 3: Create new tasks and reprioritize task list
                 new_tasks_list = check_completion_agent(OBJECTIVE, enriched_result, tasks_storage.get_tasks(),

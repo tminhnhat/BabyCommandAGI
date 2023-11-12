@@ -307,6 +307,19 @@ def limit_tokens_from_string(string: str, model: str, limit: int) -> str:
 
     return encoding.decode(encoded[:limit])
 
+def last_tokens_from_string(string: str, model: str, last: int) -> str:
+    """Limits the string to a number of tokens (estimated)."""
+
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except:
+        encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+
+    encoded = encoding.encode(string)
+
+    return encoding.decode(encoded[-last:])
+
+
 def separate_markdown(markdown):
     """
     Separates a markdown string into images and text parts.
@@ -1004,7 +1017,7 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
     return result
 
 def analyze_command_result(result: str) -> str:
-    lastString = limit_tokens_from_string(result, 'gpt-4-0314', MAX_COMMAND_RESULT_TOKEN)
+    lastString = last_tokens_from_string(result, 'gpt-4-0314', MAX_COMMAND_RESULT_TOKEN)
     result_lines = lastString.split('\n')[-100:]  # Extract the last 30 lines
     for idx, line in enumerate(result_lines):
         if "fail" in line.lower() or "error" in line.lower():

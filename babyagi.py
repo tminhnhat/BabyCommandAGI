@@ -55,7 +55,7 @@ USER_INPUT_LLM = True
 JOIN_EXISTING_OBJECTIVE = False
 MAX_OUTPUT_TOKEN = 4 * 1024 # It seems that the maximum output is 4K. 'max_tokens is too large: 64000. This model supports at most 4096 completion tokens, whereas you provided 64000.'
 MAX_INPUT_TOKEN = 128 * 1024 - MAX_OUTPUT_TOKEN - 200 # 200 is the length of the fixed text added at the end.
-MAX_COMMAND_RESULT_LENGTH = 2500
+MAX_COMMAND_RESULT_TOKEN = 1 * 1024
 
 # Goal configuration
 ORIGINAL_OBJECTIVE = os.getenv("OBJECTIVE", "")
@@ -255,6 +255,15 @@ class SingleTaskListStorage:
         """
         self.tasks = deque([d for d in self.tasks if not (d.get("target") == path and d.get("type") == "write")])
         
+    def remove_target_command_dicts(self, path, command):
+        """
+        Remove dictionaries from the list where "target" key matches path and "type" key is "write".
+
+        Args:
+        - path (str): The target path to match against.
+    
+        """
+        self.tasks = deque([d for d in self.tasks if not (d.get("target") == command and d.get("type") == "command" and "path" in d and d.get("path") == path)])
 
 # Task list
 temp_task_list = load_data(TASK_LIST_FILE) #deque([])
@@ -995,7 +1004,7 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
     return result
 
 def analyze_command_result(result: str) -> str:
-    lastString = result[-MAX_COMMAND_RESULT_LENGTH:]
+    lastString = limit_tokens_from_string(result, 'gpt-4-0314', MAX_COMMAND_RESULT_TOKEN)
     result_lines = lastString.split('\n')[-100:]  # Extract the last 30 lines
     for idx, line in enumerate(result_lines):
         if "fail" in line.lower() or "error" in line.lower():
@@ -1148,24 +1157,25 @@ def main():
                         log("\033[33m\033[1m" + "*****EXCUTE COMMAND TASK*****\n\n" + "\033[0m\033[0m")
 
                         if 'path' in task:
-                            current_dir = task['path']
-                            command = f"cd {current_dir}"
-                            all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
-                                            executed_tasks_storage.get_tasks(), current_dir)
-                            enriched_result = { "type": "command", "target": command}
-                            if all_result.startswith("The Return Code for the command is 0:"):
-                                enriched_result['result'] = "Success"
-                            else:
-                                enriched_result['result'] = all_result
-                            if os.path.isfile(PWD_FILE):
-                                with open(PWD_FILE, "r") as pwd_file:
-                                    current_dir = pwd_file.read().strip()
+                            if current_dir.strip().rstrip('/') != task['path'].strip().rstrip('/'):
+                                current_dir = task['path'].strip().rstrip('/')
+                                command = f"cd {current_dir}"
+                                all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
+                                                executed_tasks_storage.get_tasks(), current_dir)
+                                enriched_result = { "type": "command", "target": command}
+                                if all_result.startswith("The Return Code for the command is 0:"):
+                                    enriched_result['result'] = "Success"
+                                else:
+                                    enriched_result['result'] = all_result
+                                if os.path.isfile(PWD_FILE):
+                                    with open(PWD_FILE, "r") as pwd_file:
+                                        current_dir = pwd_file.read().strip()
 
-                            executed_tasks_storage.appendleft(enriched_result)
-                            save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                            # Keep only the most recent 30 tasks
-                            # if len(executed_tasks_storage.get_tasks()) > 30:
-                            #     executed_tasks_storage.pop()
+                                executed_tasks_storage.appendleft(enriched_result)
+                                save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                                # Keep only the most recent 30 tasks
+                                # if len(executed_tasks_storage.get_tasks()) > 30:
+                                #     executed_tasks_storage.pop()
 
                         while True:
                             content = task['content'].strip()
@@ -1189,7 +1199,8 @@ def main():
                             tasks_storage.appendleft(task)
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
-                            enriched_result = { "type": "command", "target": command}
+                            enriched_result = { "type": "command", "target": command, "path": current_dir}
+                            executed_tasks_storage.remove_target_command_dicts(current_dir, command)
 
                             if all_result.startswith("BabyCommandAGI: Complete"):
                                 enriched_result['result'] = "Success"

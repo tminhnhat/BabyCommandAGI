@@ -533,10 +533,7 @@ The following is the execution result of the last planned task.
 {result}
 
 # List of most recently executed results
-{ExecutedTaskParser().encode(executed_task_list)}
-
-# Uncompleted tasks
-{TaskParser().encode(task_list)}"""
+{ExecutedTaskParser().encode(executed_task_list)}"""
 
     prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
@@ -654,11 +651,6 @@ Below is the result of the last execution."""
         
 # The list of results executed most recently after that.
 {ExecutedTaskParser().encode(after_executed_task_list)}"""
-
-    prompt += f"""
-
-# Uncompleted tasks
-{TaskParser().encode(task_list)}"""
 
     prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
@@ -982,10 +974,7 @@ Otherwise, please output only 'BabyCommandAGI: Continue'.
 {all_output_for_command}
 
 # List of most recently executed results
-{ExecutedTaskParser().encode(executed_task_list)}
-
-# Uncompleted tasks
-{TaskParser().encode(task_list)}"""
+{ExecutedTaskParser().encode(executed_task_list)}"""
 
     prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)

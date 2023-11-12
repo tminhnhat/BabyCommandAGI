@@ -499,6 +499,7 @@ def check_input():
 # Thread for non-blocking input check
 input_thread = threading.Thread(target=check_input, daemon=True)
 input_thread.start()
+
 def task_creation_agent(
         objective: str, result: str, task_description: str, task_list: deque, executed_task_list: deque, current_dir: str
 ):
@@ -1025,6 +1026,30 @@ def user_feedback() -> str:
         log("\033[33m\033[1m" + "[[Feedback]]" + "\n\n" + response + "\033[0m\033[0m" + "\n")
         return response
 
+def check_first_two_lines_same_comment_style(text):
+    """
+    Extracts the first two lines from the given string and checks if both start with either '# ' or both start with '// '.
+    If there's only one line, it checks if that line starts with '# ' or '// '.
+
+    Args:
+    text (str): The string from which the lines are to be extracted.
+
+    Returns:
+    bool: True if the first two lines (or the only line if one exists) start with the same comment style ('# ' or '// '), False otherwise.
+    """
+    # Split the text into lines
+    lines = text.split('\n')
+
+    # Extract the first two lines
+    lines_to_check = lines[:2]
+
+    # Check for the case where there is only one line
+    if len(lines_to_check) == 1:
+        return lines_to_check[0].strip().startswith(('# ', '// '))
+
+    # Check if both lines start with the same comment style
+    return (lines_to_check[0].strip().startswith('# ') and lines_to_check[1].strip().startswith('# ')) or \
+           (lines_to_check[0].strip().startswith('// ') and lines_to_check[1].strip().startswith('// '))
 
 # Add the initial task if starting new objective
 if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
@@ -1074,7 +1099,7 @@ def main():
                         log(content + "\n\n")
 
                         # If it starts with a comment, make it invalid content since it is often a differential update, etc.
-                        if content.startswith("// ") or content.startswith("# "):
+                        if check_first_two_lines_same_comment_style(content):
 
                             log("*INVALID CONTENT*")
 

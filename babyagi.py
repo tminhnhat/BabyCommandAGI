@@ -1185,6 +1185,9 @@ def main():
                                 break
                             commands = deque(content.split("\n"))
                             command = commands.popleft()
+                            if command.strip().startswith("#"):
+                                task['content'] = "\n".join(list(commands))
+                                continue
                             # Ensure that results are not ignored.
                             command = command.replace(" || true", "")
                             # Remove "sudo" because "docker attach" probably does not read output executed by "sudo".

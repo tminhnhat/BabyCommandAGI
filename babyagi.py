@@ -890,74 +890,79 @@ def execution_command(objective: str, command: str, task_list: deque,
     command_to_execute = f"cd {current_dir}; {command}; echo $? > /tmp/cmd_exit_status; pwd > {PWD_FILE}; env > {ENV_DUMP_FILE}"
 
     pty_master, slave = pty.openpty()
-    process = subprocess.Popen(command_to_execute,
-                             stdin=slave,
-                             stdout=slave,
-                             stderr=slave,
-                             shell=True,
-                             text=True,
-                             bufsize=1,
-                             env=os.environ)
-    os.close(slave)
 
-    std_blocks = []
+    try:
+        process = subprocess.Popen(command_to_execute,
+                                stdin=slave,
+                                stdout=slave,
+                                stderr=slave,
+                                shell=True,
+                                text=True,
+                                bufsize=1,
+                                env=os.environ)
+        os.close(slave)
 
-    start_time = time.time()
-    notification_time = time.time()
-    print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
+        std_blocks = []
 
-    while process.poll() is None:
+        start_time = time.time()
+        notification_time = time.time()
+        print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
 
-        if input_flag == 'f':
-            log("\n" + "\033[33m\033[1m" + 'The "f" is pressed and it goes to "feedback".' + "\033[0m\033[0m" + "\n")
-            return 'BabyCommandAGI: Complete'
-        
-        if notification_time + 30 < time.time():
-            notification_time = time.time()
-            print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
-        
-        # Check for output with a timeout of some minutes
-        rlist, wlist, xlist = select.select([pty_master], [], [], 2)
-        if rlist or wlist or xlist:
-            std_blocks.extend(list_std_blocks(rlist))
-            std_blocks.extend(list_std_blocks(wlist))
-            std_blocks.extend(list_std_blocks(xlist))
+        while process.poll() is None:
 
-        else:
-            if USER_INPUT_LLM:
-                if time.time() - start_time > 300:
-                    start_time = time.time()
+            if input_flag == 'f':
+                log("\n" + "\033[33m\033[1m" + 'The "f" is pressed and it goes to "feedback".' + "\033[0m\033[0m" + "\n")
+                return 'BabyCommandAGI: Complete'
+            
+            if notification_time + 30 < time.time():
+                notification_time = time.time()
+                print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
+            
+            # Check for output with a timeout of some minutes
+            rlist, wlist, xlist = select.select([pty_master], [], [], 2)
+            if rlist or wlist or xlist:
+                std_blocks.extend(list_std_blocks(rlist))
+                std_blocks.extend(list_std_blocks(wlist))
+                std_blocks.extend(list_std_blocks(xlist))
 
-                    # Concatenate the output and split it by lines
-                    stdout_lines = "".join(std_blocks).splitlines()
+            else:
+                if USER_INPUT_LLM:
+                    if time.time() - start_time > 300:
+                        start_time = time.time()
 
-                    # No output received within 5 seconds, call the check_wating_for_response function with the last 3 lines or the entire content
-                    lastlines = stdout_lines[-3:] if len(stdout_lines) >= 3 else stdout_lines
-                    lastlines = "\n".join(lastlines)
-                    input = user_input_for_waiting(objective, lastlines, command,
-                                            "".join(std_blocks), task_list,
-                                            executed_task_list, current_dir)
-                    if input.startswith('BabyCommandAGI: Complete'):
-                        return input
-                    elif input.startswith('BabyCommandAGI: Interruption'):
-                        break
-                    elif input.startswith('BabyCommandAGI: Continue'):
-                        pass
-                    else:
-                        input += '\n'
-                        os.write(pty_master, input.encode())
+                        # Concatenate the output and split it by lines
+                        stdout_lines = "".join(std_blocks).splitlines()
 
-    os.close(pty_master)
-    pty_master = None
-    out = "".join(std_blocks)
+                        # No output received within 5 seconds, call the check_wating_for_response function with the last 3 lines or the entire content
+                        lastlines = stdout_lines[-3:] if len(stdout_lines) >= 3 else stdout_lines
+                        lastlines = "\n".join(lastlines)
+                        input = user_input_for_waiting(objective, lastlines, command,
+                                                "".join(std_blocks), task_list,
+                                                executed_task_list, current_dir)
+                        if input.startswith('BabyCommandAGI: Complete'):
+                            return input
+                        elif input.startswith('BabyCommandAGI: Interruption'):
+                            break
+                        elif input.startswith('BabyCommandAGI: Continue'):
+                            pass
+                        else:
+                            input += '\n'
+                            os.write(pty_master, input.encode())
 
-    with open("/tmp/cmd_exit_status", "r") as status_file:
-        cmd_exit_status = int(status_file.read().strip())
+        os.close(pty_master)
+        pty_master = None
+        out = "".join(std_blocks)
 
-    result = f"The Return Code for the command is {cmd_exit_status}:\n{out}"
+        with open("/tmp/cmd_exit_status", "r") as status_file:
+            cmd_exit_status = int(status_file.read().strip())
 
-    log("\n" + "\033[33m\033[1m" + "[[Output]]" + "\033[0m\033[0m" + "\n\n" +
-        result + "\n\n")
+        result = f"The Return Code for the command is {cmd_exit_status}:\n{out}"
+
+        log("\n" + "\033[33m\033[1m" + "[[Output]]" + "\033[0m\033[0m" + "\n\n" +
+            result + "\n\n")
+    finally:
+        process.terminate()
+        process.wait()
     
     return result
 

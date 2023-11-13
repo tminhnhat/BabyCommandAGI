@@ -1064,6 +1064,8 @@ def check_first_two_lines_same_comment_style(text):
 
 # Add the initial task if starting new objective
 if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
+    first_task = {"type": "command", "content": f"cd {WORKSPACE_FOLDER}"}
+    tasks_storage.append(first_task)
     initial_task = {"type": "plan", "content": INITIAL_TASK}
     tasks_storage.append(initial_task)
 

@@ -56,7 +56,6 @@ JOIN_EXISTING_OBJECTIVE = False
 MAX_OUTPUT_TOKEN = 4 * 1024 # It seems that the maximum output is 4K. 'max_tokens is too large: 64000. This model supports at most 4096 completion tokens, whereas you provided 64000.'
 MAX_INPUT_TOKEN = 128 * 1024 - MAX_OUTPUT_TOKEN - 200 # 200 is the length of the fixed text added at the end.
 MAX_COMMAND_RESULT_TOKEN = 8 * 1024
-MAX_DUPLICATE_COMMAND_RESULT_TOKEN = 1 * 1024
 
 # Goal configuration
 ORIGINAL_OBJECTIVE = os.getenv("OBJECTIVE", "")
@@ -256,7 +255,7 @@ class SingleTaskListStorage:
         """
         self.tasks = deque([d for d in self.tasks if not (d.get("target") == path and d.get("type") == "write")])
         
-    def remove_target_command_dicts(self, path, command, result):
+    def remove_target_command_dicts(self, path, command):
         """
         Remove dictionaries from the list where "target" key matches path and "type" key is "write".
 
@@ -264,18 +263,7 @@ class SingleTaskListStorage:
         - path (str): The target path to match against.
     
         """
-        self.tasks = deque([d for d in self.tasks if not (d.get("target") == command and d.get("type") == "command" and "path" in d and d.get("path") == path and d.get("content") == result and self.is_big_command_result(result))])
-
-    def is_big_command_result(self, string) -> bool:
-
-        try:
-            encoding = tiktoken.encoding_for_model('gpt-4-0314')
-        except:
-            encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
-
-        encoded = encoding.encode(string)
-
-        return MAX_DUPLICATE_COMMAND_RESULT_TOKEN <= len(encoded)
+        self.tasks = deque([d for d in self.tasks if not (d.get("target") == command and d.get("type") == "command" and "path" in d and d.get("path") == path)])
 
 # Task list
 temp_task_list = load_data(TASK_LIST_FILE) #deque([])
@@ -1219,6 +1207,7 @@ def main():
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                             enriched_result = { "type": "command", "target": command, "path": current_dir}
+                            executed_tasks_storage.remove_target_command_dicts(current_dir, command)
 
                             if all_result.startswith("BabyCommandAGI: Complete"):
                                 enriched_result['result'] = "Success"
@@ -1233,7 +1222,6 @@ def main():
 
                             if all_result.startswith("The Return Code for the command is 0:") is False:
                                 enriched_result['result'] = result
-                                executed_tasks_storage.remove_target_command_dicts(current_dir, command, result)
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 # Keep only the most recent 30 tasks

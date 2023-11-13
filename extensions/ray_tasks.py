@@ -51,7 +51,7 @@ class CooperativeTaskListStorageActor:
         """
         self.tasks = deque([d for d in self.tasks if not (d.get("target") == path and d.get("type") == "write")])
 
-    def remove_target_command_dicts(self, path, command, result):
+    def remove_target_command_dicts(self, path, command):
         """
         Remove dictionaries from the list where "target" key matches path and "type" key is "write".
 
@@ -59,18 +59,7 @@ class CooperativeTaskListStorageActor:
         - path (str): The target path to match against.
     
         """
-        self.tasks = deque([d for d in self.tasks if not (d.get("target") == command and d.get("type") == "command" and "path" in d and d.get("path") == path and d.get("content") == result and self.is_big_command_result(result))])
-
-    def is_big_command_result(self, string) -> bool:
-
-        try:
-            encoding = tiktoken.encoding_for_model('gpt-4-0314')
-        except:
-            encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
-
-        encoded = encoding.encode(string)
-
-        return MAX_DUPLICATE_COMMAND_RESULT_TOKEN <= len(encoded)
+        self.tasks = deque([d for d in self.tasks if not (d.get("target") == command and d.get("type") == "command" and "path" in d and d.get("path") == path)])
 
 class CooperativeTaskListStorage:
     def __init__(self, name: str, task_list: deque):

@@ -586,7 +586,7 @@ class Minesweeper:
 ```
 
 # Absolute Rule
-Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. The "write" task should always output the entire file."""
+Please never output the 'sudo' command. Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. The "write" task should always output the entire file."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -700,7 +700,7 @@ class Minesweeper:
 ```
 
 # Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. The "write" task should always output the entire file."""
+If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. Please never output the 'sudo' command. The "write" task should always output the entire file."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -783,7 +783,7 @@ class Minesweeper:
 ```
 
 # Absolute Rule
-Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block. The "write" task should always output the entire file."""
+Please never output the 'sudo' command. Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block. The "write" task should always output the entire file."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")

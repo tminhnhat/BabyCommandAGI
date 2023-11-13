@@ -55,7 +55,7 @@ USER_INPUT_LLM = True
 JOIN_EXISTING_OBJECTIVE = False
 MAX_OUTPUT_TOKEN = 4 * 1024 # It seems that the maximum output is 4K. 'max_tokens is too large: 64000. This model supports at most 4096 completion tokens, whereas you provided 64000.'
 MAX_INPUT_TOKEN = 128 * 1024 - MAX_OUTPUT_TOKEN - 200 # 200 is the length of the fixed text added at the end.
-MAX_COMMAND_RESULT_TOKEN = 1 * 1024
+MAX_COMMAND_RESULT_TOKEN = 8 * 1024
 
 # Goal configuration
 ORIGINAL_OBJECTIVE = os.getenv("OBJECTIVE", "")

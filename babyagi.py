@@ -247,17 +247,17 @@ class SingleTaskListStorage:
 
     def remove_target_write_dicts(self, path):
         """
-        Remove dictionaries from the list where "target" key matches path and "type" key is "write".
+        Remove dictionaries from the list where "target" key matches path and "type" key is "entire_file_after_writing".
 
         Args:
         - path (str): The target path to match against.
     
         """
-        self.tasks = deque([d for d in self.tasks if not (d.get("target") == path and d.get("type") == "write")])
+        self.tasks = deque([d for d in self.tasks if not (d.get("target") == path and d.get("type") == "entire_file_after_writing")])
         
     def remove_target_command_dicts(self, path, command):
         """
-        Remove dictionaries from the list where "target" key matches path and "type" key is "write".
+        Remove dictionaries from the list where "target" key matches path and "type" key is "command".
 
         Args:
         - path (str): The target path to match against.
@@ -543,7 +543,7 @@ The following is the execution result of the last planned task.
 {current_dir}
 
 # Example of tasks output
-type: write
+type: create
 path: /workspace/requirements.txt
 ```
 dataclasses
@@ -558,7 +558,7 @@ type: plan
 ```
 Designing a Minesweeper.
 ```
-type: write
+type: create
 path: /workspace/minesweeper.py
 ```python
 from board import Board
@@ -573,9 +573,9 @@ class Minesweeper:
         while not game_over:
             self.display_board()
             row, col, action = self.play_turn()
-            if action == "R":
+            if action == "r":
                 game_over = self.board.reveal_cell(row, col)
-            elif action == "F":
+            elif action == "f":
                 self.board.flag_cell(row, col)
 
             if self.board.is_game_over():
@@ -584,9 +584,22 @@ class Minesweeper:
         self.display_board()
         print("Game Over!")
 ```
+type: modify
+path: /workspace/minesweeper.py
+```python
+# if action == "r":
+#     game_over = self.board.reveal_cell(row, col)
+# elif action == "f":
+#     self.board.flag_cell(row, col)
+
+if action == "R":
+    game_over = self.board.reveal_cell(row, col)
+elif action == "F":
+    self.board.flag_cell(row, col)
+```
 
 # Absolute Rule
-Please never output the 'sudo' command. Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. The "write" task should always output the entire file."""
+Please never output the 'sudo' command. Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -612,7 +625,7 @@ If the objective is not achieved based on the results, remove the executed tasks
 
 Below is the result of the last execution."""
 
-    if enriched_result["type"].startswith("write"):
+    if enriched_result["type"].startswith("entire_file_after_writing"):
         prompt += f"""
         
 # Path where the file was written
@@ -621,13 +634,13 @@ Below is the result of the last execution."""
 # Content written to file
 {enriched_result["result"]}"""
         
-    elif enriched_result["type"].startswith("fail_write_for_invalide_content"):
+    elif enriched_result["type"].startswith("fail_create_for_invalide_content"):
         prompt += f"""
         
-# Pass that I tried to write but failed.
+# Pass that I tried to create but failed.
 {enriched_result["target"]}
 
-# Invalid content that fails to write
+# Invalid content that fails to create
 ```
 {enriched_result["result"]}
 ```"""
@@ -657,7 +670,7 @@ Below is the result of the last execution."""
     prompt += """
 
 # Example of tasks output
-type: write
+type: create
 path: /workspace/requirements.txt
 ```
 dataclasses
@@ -672,7 +685,7 @@ type: plan
 ```
 Designing a Minesweeper.
 ```
-type: write
+type: create
 path: /workspace/minesweeper.py
 ```python
 from board import Board
@@ -687,9 +700,9 @@ class Minesweeper:
         while not game_over:
             self.display_board()
             row, col, action = self.play_turn()
-            if action == "R":
+            if action == "r":
                 game_over = self.board.reveal_cell(row, col)
-            elif action == "F":
+            elif action == "f":
                 self.board.flag_cell(row, col)
 
             if self.board.is_game_over():
@@ -698,9 +711,22 @@ class Minesweeper:
         self.display_board()
         print("Game Over!")
 ```
+type: modify
+path: /workspace/minesweeper.py
+```python
+# if action == "r":
+#     game_over = self.board.reveal_cell(row, col)
+# elif action == "f":
+#     self.board.flag_cell(row, col)
+
+if action == "R":
+    game_over = self.board.reveal_cell(row, col)
+elif action == "F":
+    self.board.flag_cell(row, col)
+```
 
 # Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. Please never output the 'sudo' command. The "write" task should always output the entire file."""
+If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. Please never output the 'sudo' command."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -740,7 +766,7 @@ Based on the following OBJECTIVE, Before you begin the following single task, pl
     prompt += f"""
 
 # Example of output
-type: write
+type: create
 path: /workspace/requirements.txt
 ```
 dataclasses
@@ -755,7 +781,7 @@ type: plan
 ```
 Designing a Minesweeper.
 ```
-type: write
+type: create
 path: /workspace/minesweeper.py
 ```python
 from board import Board
@@ -770,9 +796,9 @@ class Minesweeper:
         while not game_over:
             self.display_board()
             row, col, action = self.play_turn()
-            if action == "R":
+            if action == "r":
                 game_over = self.board.reveal_cell(row, col)
-            elif action == "F":
+            elif action == "f":
                 self.board.flag_cell(row, col)
 
             if self.board.is_game_over():
@@ -781,9 +807,22 @@ class Minesweeper:
         self.display_board()
         print("Game Over!")
 ```
+type: modify
+path: /workspace/minesweeper.py
+```python
+# if action == "r":
+#     game_over = self.board.reveal_cell(row, col)
+# elif action == "f":
+#     self.board.flag_cell(row, col)
+
+if action == "R":
+    game_over = self.board.reveal_cell(row, col)
+elif action == "F":
+    self.board.flag_cell(row, col)
+```
 
 # Absolute Rule
-Please never output the 'sudo' command. Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block. The "write" task should always output the entire file."""
+Please never output the 'sudo' command. Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -1097,7 +1136,7 @@ def main():
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
             # Check executable command
-            if task['type'].startswith("write") or task['type'].startswith("command"):
+            if task['type'].startswith("create") or task['type'].startswith("command"):
 
                 enriched_result = {}
                 is_check_result = False
@@ -1105,8 +1144,8 @@ def main():
                 is_complete = False
                 while True:
 
-                    if task['type'].startswith("write"):
-                        log("\033[33m\033[1m" + "*****WRITE TASK*****\n\n" + "\033[0m\033[0m")
+                    if task['type'].startswith("create"):
+                        log("\033[33m\033[1m" + "*****CREATE TASK*****\n\n" + "\033[0m\033[0m")
 
                         path = task['path']
                         content = task['content']
@@ -1127,7 +1166,7 @@ def main():
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                             enriched_result = {
-                                "type": "fail_write_for_invalide_content",
+                                "type": "fail_create_for_invalide_content",
                                 "target": path,
                                 "result": content
                                 }
@@ -1141,7 +1180,7 @@ def main():
                         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                         enriched_result = {
-                            "type": "write",
+                            "type": "entire_file_after_writing",
                             "target": path,
                             "result": content
                             }
@@ -1157,7 +1196,7 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("write") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("create") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True
@@ -1256,7 +1295,7 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("write") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("create") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True

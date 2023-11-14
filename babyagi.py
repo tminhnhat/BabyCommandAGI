@@ -656,6 +656,12 @@ Below is the result of the last execution."""
 {enriched_result["result"]}
 ```"""
         
+    elif enriched_result["type"].startswith("fail_modify_due_to_no_file"):
+        prompt += f"""
+        
+# Failed to make modifications because the file was missing.
+path: {enriched_result["target"]}"""
+        
     elif enriched_result["type"].startswith("command"):
         prompt += f"""
 
@@ -1096,6 +1102,38 @@ def write_file(file_path: str, content: str):
     with open(file_path, "w") as file:
         file.write(content)
 
+def merge_file(base_content: str, modify_content: str) -> str:
+    
+    prompt = f"""You are the best engineer.
+Please merge the following modified code into the base code.
+
+Base code:
+```
+{base_content}
+```
+
+Modified code:
+```
+{modify_content}
+```
+
+# Absolute Rule
+Always output only the merged code and never start the output with ```."""
+
+    log("\n\n")
+    log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
+        "\n\n")
+    result = openai_call(prompt)
+    log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
+        result + "\n\n")
+
+    if result.starswith("```"):
+        log("Invalid output for merge:")
+        log("\nRetry\n\n")
+        return merge_file(base_content, modify_content)
+    
+    return result
+
 def user_feedback() -> str:
 
     log("\033[33m\033[1m" + "*****USER FEEDBACK*****\n\n" + "\033[0m\033[0m")
@@ -1169,7 +1207,7 @@ def main():
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
             # Check executable command
-            if task['type'].startswith("create") or task['type'].startswith("command"):
+            if task['type'].startswith("create") or next_task['type'].startswith("modify") or task['type'].startswith("command"):
 
                 enriched_result = {}
                 is_check_result = False
@@ -1229,11 +1267,72 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("create") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True
                                 break
+
+                    elif task['type'].startswith("modify"):
+                        log("\033[33m\033[1m" + "*****MODIFY TASK*****\n\n" + "\033[0m\033[0m")
+
+                        path = task['path']
+                        content = task['content']
+
+                        # Ensure that results are not ignored.
+                        if path.endswith(".sh"):
+                            content = content.replace(" || true", "")
+
+                        log("path: " + path + "\n\n")
+                        log(content + "\n\n")
+
+                        try:
+                            with open(path, 'r', encoding='utf-8') as file:
+                                base_content = file.read()
+
+                                new_content = merge_file(base_content, content)
+
+                                write_file(path, new_content)
+
+                                # Step 2: Enrich result and store
+                                save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+
+                                enriched_result = {
+                                    "type": "entire_file_after_writing",
+                                    "target": path,
+                                    "result": new_content
+                                    }
+                                executed_tasks_storage.remove_target_write_dicts(path)
+                                executed_tasks_storage.appendleft(enriched_result)
+                                save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                                        
+                                # Keep only the most recent 30 tasks
+                                # if len(executed_tasks_storage.get_tasks()) > 30:
+                                #     executed_tasks_storage.pop()
+                                    
+                                if tasks_storage.is_empty():
+                                    break
+                                else:
+                                    next_task = tasks_storage.reference(0)
+                                    if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
+                                        task = tasks_storage.popleft()
+                                    else:
+                                        is_next_plan = True
+                                        break                            
+                        except FileNotFoundError:
+                            log("*MODIFY PATH FILE NOTHING*")
+
+                            # Step 2: Enrich result and store
+                            save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+
+                            enriched_result = {
+                                "type": "fail_modify_due_to_no_file",
+                                "target": path,
+                                "result": content
+                                }
+                            executed_tasks_storage.appendleft(enriched_result)
+                            save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                            break
 
                     elif task['type'].startswith("command"):
 
@@ -1328,7 +1427,7 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("create") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True

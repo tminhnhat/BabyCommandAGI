@@ -1127,7 +1127,7 @@ Always output only the merged code and never start the output with ```."""
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         result + "\n\n")
 
-    if result.starswith("```"):
+    if result.startswith("```"):
         log("Invalid output for merge:")
         log("\nRetry\n\n")
         return merge_file(base_content, modify_content)
@@ -1207,7 +1207,7 @@ def main():
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
             # Check executable command
-            if task['type'].startswith("create") or next_task['type'].startswith("modify") or task['type'].startswith("command"):
+            if task['type'].startswith("create") or task['type'].startswith("modify") or task['type'].startswith("command"):
 
                 enriched_result = {}
                 is_check_result = False

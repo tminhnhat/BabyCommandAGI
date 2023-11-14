@@ -564,14 +564,11 @@ path: /workspace/minesweeper.py
 from board import Board
 
 class Minesweeper:
-    def __init__(self, rows: int, cols: int, mines: int):
-        self.board = Board(rows, cols, mines)
+    def __init__(self):
+        self.board = Board()
 
     def start_game(self):
-        game_over = False
-
         while not game_over:
-            self.display_board()
             row, col, action = self.play_turn()
             if action == "r":
                 game_over = self.board.reveal_cell(row, col)
@@ -583,6 +580,20 @@ class Minesweeper:
 
         self.display_board()
         print("Game Over!")
+```
+type: modify
+path: /workspace/minesweeper.py
+```python
+from board import Board
+
+class Minesweeper:
+    def __init__(self, rows: int, cols: int, mines: int):
+        self.board = Board(rows, cols, mines)
+
+    def start_game(self):
+        game_over = False
+
+        # ... Rest of the code remains unchanged ...
 ```
 type: modify
 path: /workspace/minesweeper.py
@@ -691,14 +702,11 @@ path: /workspace/minesweeper.py
 from board import Board
 
 class Minesweeper:
-    def __init__(self, rows: int, cols: int, mines: int):
-        self.board = Board(rows, cols, mines)
+    def __init__(self):
+        self.board = Board()
 
     def start_game(self):
-        game_over = False
-
         while not game_over:
-            self.display_board()
             row, col, action = self.play_turn()
             if action == "r":
                 game_over = self.board.reveal_cell(row, col)
@@ -710,6 +718,20 @@ class Minesweeper:
 
         self.display_board()
         print("Game Over!")
+```
+type: modify
+path: /workspace/minesweeper.py
+```python
+from board import Board
+
+class Minesweeper:
+    def __init__(self, rows: int, cols: int, mines: int):
+        self.board = Board(rows, cols, mines)
+
+    def start_game(self):
+        game_over = False
+
+        # ... Rest of the code remains unchanged ...
 ```
 type: modify
 path: /workspace/minesweeper.py
@@ -787,14 +809,11 @@ path: /workspace/minesweeper.py
 from board import Board
 
 class Minesweeper:
-    def __init__(self, rows: int, cols: int, mines: int):
-        self.board = Board(rows, cols, mines)
+    def __init__(self):
+        self.board = Board()
 
     def start_game(self):
-        game_over = False
-
         while not game_over:
-            self.display_board()
             row, col, action = self.play_turn()
             if action == "r":
                 game_over = self.board.reveal_cell(row, col)
@@ -806,6 +825,20 @@ class Minesweeper:
 
         self.display_board()
         print("Game Over!")
+```
+type: modify
+path: /workspace/minesweeper.py
+```python
+from board import Board
+
+class Minesweeper:
+    def __init__(self, rows: int, cols: int, mines: int):
+        self.board = Board(rows, cols, mines)
+
+    def start_game(self):
+        game_over = False
+
+        # ... Rest of the code remains unchanged ...
 ```
 type: modify
 path: /workspace/minesweeper.py

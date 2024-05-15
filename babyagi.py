@@ -16,6 +16,7 @@ from collections import deque
 from typing import Dict, List
 import importlib
 import openai
+import google.generativeai as genai
 import tiktoken as tiktoken
 import re
 from task_parser import TaskParser
@@ -39,6 +40,8 @@ LLM_VISION_MODEL = os.getenv("LLM_VISION_MODEL", os.getenv("OPENAI_API_VISION_MO
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GOOGLE_AI_STUDIO_API_KEY =  os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
+
 if not (LLM_MODEL.startswith("llama") or LLM_MODEL.startswith("human")):
     assert OPENAI_API_KEY, "\033[91m\033[1m" + "OPENAI_API_KEY environment variable is missing from .env" + "\033[0m\033[0m"
 
@@ -215,6 +218,7 @@ log(f"{OBJECTIVE}")
 
 # Configure OpenAI
 openai.api_key = OPENAI_API_KEY
+genai.configure(api_key=GOOGLE_AI_STUDIO_API_KEY)
 
 # Task storage supporting only a single instance of BabyAGI
 class SingleTaskListStorage:
@@ -427,6 +431,30 @@ def openai_call(
             #         presence_penalty=0,
             #     )
             #     return response.choices[0].text.strip()
+            elif model.lower().startswith("gemini"):
+                
+                log(f"【MODEL】:{model}")
+
+                system_prompt = prompt
+
+                generation_config = {
+                    "max_output_tokens": 8192,
+                    "response_mime_type": "text/plain",
+                }
+
+                model = genai.GenerativeModel(
+                    model_name=model,
+                    generation_config=generation_config,
+                    system_instruction=system_prompt,
+                )
+
+                chat_session = model.start_chat(
+                    history=[
+                    ]
+                )
+                response = chat_session.send_message(prompt)
+
+                return response.text.strip()
             else:
                 # Use 8000 instead of the real limit (8194) to give a bit of wiggle room for the encoding of roles.
                 # TODO: different limits for different models.

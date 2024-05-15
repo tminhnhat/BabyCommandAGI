@@ -1789,7 +1789,8 @@ def main():
 
                             if all_result.startswith("The Return Code for the command is 0:") is False:
                                 enriched_result['result'] = result
-                                executed_tasks_storage.remove_target_command_dicts(current_dir, command, result)
+                                # TODO: Check Results. Try to disable the process of removing duplicate command execution results
+                                # executed_tasks_storage.remove_target_command_dicts(current_dir, command, result)
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 # Keep only the most recent 30 tasks

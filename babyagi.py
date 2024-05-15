@@ -529,8 +529,11 @@ def openai_call(
                 "   *** OpenAI API service unavailable. Waiting 10 seconds and trying again. ***"
             )
             time.sleep(10)  # Wait 10 seconds and try again
-        else:
-            break
+        except Exception as e:
+            log(
+                f"   *** Other error occurred: {str(e)} ***"
+            )
+            time.sleep(10)  # Wait 10 seconds and try again
 
 # Global variable for flagging input
 input_flag = None
@@ -555,9 +558,9 @@ def check_completion_agent(
 ):
     prompt = f"""You are a best engineer that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
 
-If the objective is achieved based on the results, output only the string "Complete" instead of a "Example of tasks output" format. In that case, never output anything other than "Complete".
+If the objective is achieved based on the results, output only the string "Complete" instead of a "Example X of tasks output" format. In that case, never output anything other than "Complete".
 
-If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output them as a format following the "Example of tasks output" below. Please never output anything other than a "Example of tasks output" format.
+If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output them as a format following the "Example X of tasks output" below. Please never output anything other than a "Example X of tasks output" format.
 
 Below is the result of the last execution."""
 
@@ -611,7 +614,7 @@ path: {enriched_result["target"]}"""
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
-# Example of tasks output
+# Example 1 of tasks output
 type: create
 path: /workspace/requirements.txt
 ```
@@ -678,8 +681,228 @@ elif action == "F":
     self.board.flag_cell(row, col)
 ```
 
+# Example 2 of tasks output
+type: command
+path: /workspace/
+```
+pip install curl
+```
+type: command
+path: /workspace/
+```
+curl -s https://wttr.in/Tokyo
+```
+
+# Example 3 of tasks output
+type: command
+path: /workspace/
+```
+apt-get update
+apt-get install -y git
+apt-get install -y npm
+git clone https://github.com/samuelcust/flappy-bird-assets.git
+```
+type: command
+path: /workspace/flappy-bird-assets/
+```
+npm init -y
+npm install express
+```
+type: create
+path: /workspace/flappy-bird-assets/server.js
+```
+const express = require('express');
+const app = express();
+const PORT = 8080;
+
+// Serve static files from the root directory
+app.use(express.static(__dirname));
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Flappy Bird game running at http://0.0.0.0:${PORT}/`);
+});
+```
+type: create
+path: /workspace/flappy-bird-assets/index.html
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flappy Bird</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    <script src="flappy-bird.js"></script>
+</head>
+<body>
+</body>
+</html>
+```
+type: create
+path: /workspace/flappy-bird-assets/flappy-bird.js
+```
+let bird;
+let pipes = [];
+let score = 0;
+let birdImg = [];
+let pipeImg;
+let bgImg;
+let scoreSound;
+let hitSound;
+let baseImg;
+let baseX = 0;
+
+function preload() {
+  // Load bird images
+  birdImg[0] = loadImage('sprites/yellowbird-downflap.png');
+  birdImg[1] = loadImage('sprites/yellowbird-midflap.png');
+  birdImg[2] = loadImage('sprites/yellowbird-upflap.png');
+
+  // Load other images
+  pipeImg = loadImage('sprites/pipe-green.png');
+  bgImg = loadImage('sprites/background-day.png');
+  baseImg = loadImage('sprites/base.png');
+
+  // Load sounds
+  scoreSound = loadSound('audio/point.ogg');
+  hitSound = loadSound('audio/hit.ogg');
+}
+
+function setup() {
+  createCanvas(400, 600);
+  bird = new Bird();
+  pipes.push(new Pipe());
+}
+
+function draw() {
+  image(bgImg, 0, 0, width, height);
+
+  // Draw and update bird
+  bird.update();
+
+  if (bird.touchesGround()) {
+    console.log('GAME OVER - TOUCHED GROUND');
+    hitSound.play();
+    noLoop();
+  }
+
+  bird.show();
+
+  // Check if a pipe is off-screen and generate new pipes
+  if (pipes[0].x + pipes[0].width < 0) {
+    score++;
+    scoreSound.play();
+    pipes.shift();
+    pipes.push(new Pipe());
+  }
+
+  // Draw and update pipes
+  for (let pipe of pipes) {
+    pipe.update();
+    pipe.show();
+
+    if (pipe.hits(bird)) {
+      console.log('GAME OVER');
+      hitSound.play();
+      noLoop();
+    }
+  }
+
+  // Display moving base
+  image(baseImg, baseX, height - baseImg.height);
+  image(baseImg, baseX + baseImg.width, height - baseImg.height);
+  baseX -= 2;
+  if (baseX <= -baseImg.width) {
+    baseX = 0;
+  }
+
+  // Show score
+  fill(255);
+  textSize(32);
+  text(score, 10, 32);
+}
+
+function mouseClicked() {
+  bird.flap();
+}
+
+class Bird {
+  constructor() {
+    this.y = height / 2;
+    this.x = 50;
+    this.size = 32;
+    this.gravity = 0.15;  // Make the bird fall more slowly
+    this.lift = -4;      // Make the bird rise more slowly
+    this.velocity = 0;
+    this.animation = birdImg;
+    this.index = 0;
+  }
+
+  touchesGround() {
+    return this.y + (this.size / 2) >= height - baseImg.height;
+  }
+
+  update() {
+    this.y += this.velocity;
+    this.velocity += this.gravity;
+    this.y = constrain(this.y, 0, height - baseImg.height);
+
+    // Cycle through bird images for animation
+    this.index += 0.2;
+    if (this.index >= this.animation.length) {
+      this.index = 0;
+    }
+  }
+
+  show() {
+    let img = this.animation[floor(this.index)];
+    image(img, this.x, this.y);
+  }
+
+  flap() {
+    this.velocity += this.lift;
+  }
+}
+
+class Pipe {
+  constructor() {
+    this.spacing = 150;
+    this.top = random(height / 6, (2 / 3) * height);
+    this.bottom = height - (this.top + this.spacing) - baseImg.height;
+    this.x = width;
+    this.width = pipeImg.width;
+    this.speed = 2;
+  }
+
+  hits(bird) {
+    if (bird.y < this.top || bird.y > height - this.bottom - baseImg.height) {
+      if (bird.x > this.x && bird.x < this.x + this.width) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  update() {
+    this.x -= this.speed;
+  }
+
+  show() {
+    // Display top pipe
+    image(pipeImg, this.x, 0, this.width, this.top);
+    // Display bottom pipe (flipped)
+    image(pipeImg, this.x, height - this.bottom, this.width, this.bottom);
+  }
+}
+```
+type: command
+path: /workspace/flappy-bird-assets/
+```
+node server.js
+```
+
 # Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block. Please never output the 'sudo' command."""
+If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example X of tasks output" format that always includes "type:" before the ``` block. Please never output the 'sudo' command."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -700,7 +923,7 @@ def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str):
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a best engineer.
-Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output in the format of "Example of output" that always includes "type:" before the ``` block.
+Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output in the format of "Example X of tasks output" that always includes "type:" before the ``` block.
 
 # OBJECTIVE
 {objective}
@@ -716,9 +939,9 @@ Based on the following OBJECTIVE, Before you begin the following single task, pl
     
     prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
-    prompt += f"""
+    prompt += """
 
-# Example of output
+# Example 1 of tasks output
 type: create
 path: /workspace/requirements.txt
 ```
@@ -785,8 +1008,228 @@ elif action == "F":
     self.board.flag_cell(row, col)
 ```
 
+# Example 2 of tasks output
+type: command
+path: /workspace/
+```
+pip install curl
+```
+type: command
+path: /workspace/
+```
+curl -s https://wttr.in/Tokyo
+```
+
+# Example 3 of tasks output
+type: command
+path: /workspace/
+```
+apt-get update
+apt-get install -y git
+apt-get install -y npm
+git clone https://github.com/samuelcust/flappy-bird-assets.git
+```
+type: command
+path: /workspace/flappy-bird-assets/
+```
+npm init -y
+npm install express
+```
+type: create
+path: /workspace/flappy-bird-assets/server.js
+```
+const express = require('express');
+const app = express();
+const PORT = 8080;
+
+// Serve static files from the root directory
+app.use(express.static(__dirname));
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Flappy Bird game running at http://0.0.0.0:${PORT}/`);
+});
+```
+type: create
+path: /workspace/flappy-bird-assets/index.html
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flappy Bird</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    <script src="flappy-bird.js"></script>
+</head>
+<body>
+</body>
+</html>
+```
+type: create
+path: /workspace/flappy-bird-assets/flappy-bird.js
+```
+let bird;
+let pipes = [];
+let score = 0;
+let birdImg = [];
+let pipeImg;
+let bgImg;
+let scoreSound;
+let hitSound;
+let baseImg;
+let baseX = 0;
+
+function preload() {
+  // Load bird images
+  birdImg[0] = loadImage('sprites/yellowbird-downflap.png');
+  birdImg[1] = loadImage('sprites/yellowbird-midflap.png');
+  birdImg[2] = loadImage('sprites/yellowbird-upflap.png');
+
+  // Load other images
+  pipeImg = loadImage('sprites/pipe-green.png');
+  bgImg = loadImage('sprites/background-day.png');
+  baseImg = loadImage('sprites/base.png');
+
+  // Load sounds
+  scoreSound = loadSound('audio/point.ogg');
+  hitSound = loadSound('audio/hit.ogg');
+}
+
+function setup() {
+  createCanvas(400, 600);
+  bird = new Bird();
+  pipes.push(new Pipe());
+}
+
+function draw() {
+  image(bgImg, 0, 0, width, height);
+
+  // Draw and update bird
+  bird.update();
+
+  if (bird.touchesGround()) {
+    console.log('GAME OVER - TOUCHED GROUND');
+    hitSound.play();
+    noLoop();
+  }
+
+  bird.show();
+
+  // Check if a pipe is off-screen and generate new pipes
+  if (pipes[0].x + pipes[0].width < 0) {
+    score++;
+    scoreSound.play();
+    pipes.shift();
+    pipes.push(new Pipe());
+  }
+
+  // Draw and update pipes
+  for (let pipe of pipes) {
+    pipe.update();
+    pipe.show();
+
+    if (pipe.hits(bird)) {
+      console.log('GAME OVER');
+      hitSound.play();
+      noLoop();
+    }
+  }
+
+  // Display moving base
+  image(baseImg, baseX, height - baseImg.height);
+  image(baseImg, baseX + baseImg.width, height - baseImg.height);
+  baseX -= 2;
+  if (baseX <= -baseImg.width) {
+    baseX = 0;
+  }
+
+  // Show score
+  fill(255);
+  textSize(32);
+  text(score, 10, 32);
+}
+
+function mouseClicked() {
+  bird.flap();
+}
+
+class Bird {
+  constructor() {
+    this.y = height / 2;
+    this.x = 50;
+    this.size = 32;
+    this.gravity = 0.15;  // Make the bird fall more slowly
+    this.lift = -4;      // Make the bird rise more slowly
+    this.velocity = 0;
+    this.animation = birdImg;
+    this.index = 0;
+  }
+
+  touchesGround() {
+    return this.y + (this.size / 2) >= height - baseImg.height;
+  }
+
+  update() {
+    this.y += this.velocity;
+    this.velocity += this.gravity;
+    this.y = constrain(this.y, 0, height - baseImg.height);
+
+    // Cycle through bird images for animation
+    this.index += 0.2;
+    if (this.index >= this.animation.length) {
+      this.index = 0;
+    }
+  }
+
+  show() {
+    let img = this.animation[floor(this.index)];
+    image(img, this.x, this.y);
+  }
+
+  flap() {
+    this.velocity += this.lift;
+  }
+}
+
+class Pipe {
+  constructor() {
+    this.spacing = 150;
+    this.top = random(height / 6, (2 / 3) * height);
+    this.bottom = height - (this.top + this.spacing) - baseImg.height;
+    this.x = width;
+    this.width = pipeImg.width;
+    this.speed = 2;
+  }
+
+  hits(bird) {
+    if (bird.y < this.top || bird.y > height - this.bottom - baseImg.height) {
+      if (bird.x > this.x && bird.x < this.x + this.width) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  update() {
+    this.x -= this.speed;
+  }
+
+  show() {
+    // Display top pipe
+    image(pipeImg, this.x, 0, this.width, this.top);
+    // Display bottom pipe (flipped)
+    image(pipeImg, this.x, height - this.bottom, this.width, this.bottom);
+  }
+}
+```
+type: command
+path: /workspace/flappy-bird-assets/
+```
+node server.js
+```
+
 # Absolute Rule
-Please never output the 'sudo' command. Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block."""
+Please never output the 'sudo' command. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before the ``` block."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")

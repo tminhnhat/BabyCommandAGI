@@ -1645,7 +1645,8 @@ def main():
                             "target": path,
                             "result": content
                             }
-                        executed_tasks_storage.remove_target_write_dicts(path)
+                        # I'll try to disable the delete process because it's deleting duplicates in the history, which could cause it to repeat itself.
+                        # executed_tasks_storage.remove_target_write_dicts(path)
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 

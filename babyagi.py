@@ -66,6 +66,7 @@ INITIAL_TASK = os.getenv("INITIAL_TASK", os.getenv("FIRST_TASK", ""))
 
 # Model configuration
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.0))
+GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", 0.0))
 
 #Set Variables
 hash_object = hashlib.sha1(ORIGINAL_OBJECTIVE.encode())
@@ -438,6 +439,7 @@ def openai_call(
                 system_prompt = prompt
 
                 generation_config = {
+                    "temperature" : GEMINI_TEMPERATURE,
                     "max_output_tokens": 8192,
                     "response_mime_type": "text/plain",
                 }
@@ -533,7 +535,7 @@ def openai_call(
             log(
                 f"   *** Other error occurred: {str(e)} ***"
             )
-            time.sleep(10)  # Wait 10 seconds and try again
+            time.sleep(30)  # Wait 30 seconds and try again
 
 # Global variable for flagging input
 input_flag = None
@@ -902,7 +904,7 @@ node server.js
 ```
 
 # Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example X of tasks output" format that always includes "type:" before the ``` block. Please never output the 'sudo' command."""
+If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands. Never include ``` within ``` blocks."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -923,7 +925,7 @@ def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str):
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a best engineer.
-Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output in the format of "Example X of tasks output" that always includes "type:" before the ``` block.
+Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output in the format of "Example X of tasks output" that always includes "type:" before ``` blocks. Never include ``` within ``` blocks.
 
 # OBJECTIVE
 {objective}
@@ -1229,7 +1231,7 @@ node server.js
 ```
 
 # Absolute Rule
-Please never output the 'sudo' command. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before the ``` block."""
+Please never output the 'sudo' command. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Never include ``` within ``` blocks."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")

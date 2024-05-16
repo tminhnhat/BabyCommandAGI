@@ -1864,6 +1864,14 @@ def main():
                 if input_flag == "f":
                     break
         feedback = user_feedback()
+        enriched_result = {
+            "type": "feedback",
+            "target": "user",
+            "result": feedback
+        }
+        executed_tasks_storage.appendleft(enriched_result)
+        save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+
         objective_list = deque([feedback, ORIGINAL_OBJECTIVE])
         save_data(objective_list, OBJECTIVE_LIST_FILE)
         OBJECTIVE = parse_objective(objective_list)

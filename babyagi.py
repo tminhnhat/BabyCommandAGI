@@ -541,21 +541,21 @@ def openai_call(
                 "   *** OpenAI API connection error occurred. Check your network settings, proxy configuration, SSL certificates, or firewall rules. Waiting 300 seconds and trying again. ***"
             )
             time.sleep(300)  # Wait seconds and try again
-        except openai.BadRequestError:
+        except openai.BadRequestError as e:
             log(
                 "   *** OpenAI API BadRequestError. Check the documentation for the specific API method you are calling and make sure you are sending valid and complete parameters. Waiting 10 seconds and trying again. ***"
             )
-            raise # 仕方ないので終了
-        except openai.InternalServerError:
+            raise e
+        except openai.InternalServerError as e:
             log(
                 "   *** OpenAI API InternalServerError. ***"
             )
-            raise # 仕方ないので終了
+            raise e
         except Exception as e:
             log(
                 f"   *** Other error occurred: {str(e)} ***"
             )
-            raise # 仕方ないので終了
+            raise e
 
 # Global variable for flagging input
 input_flag = None
@@ -1305,7 +1305,7 @@ def list_std_blocks(target_list: list) -> list[str]:
                             # to break and re-raise the exception, or skip this character,
                             # or replace it, or something else.
                             log(f"\nUnicodeDecodeError:\n {e}\n\n")
-                            raise
+                            raise e
                     else:
                         output_block = text
                         if output_block:
@@ -1496,9 +1496,12 @@ def analyze_command_result(result: str) -> str:
     return '\n'.join(result_lines)  # If no match, return the last 30 lines
 
 def write_file(file_path: str, content: str):
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, "w") as file:
-        file.write(content)
+    try:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w") as file:
+            file.write(content)
+    except Exception as e:
+        raise e
 
 def merge_file(base_content: str, modify_content: str) -> str:
     
@@ -1643,7 +1646,14 @@ def main():
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             break
 
-                        write_file(path, content)
+                        try:
+                            write_file(path, content)
+                        except Exception as e:
+                            log(
+                                f"   *** Other error occurred: {str(e)} ***"
+                            )
+                            raise e
+
 
                         # Step 2: Enrich result and store
                         save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
@@ -1733,6 +1743,11 @@ def main():
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             break
+                        except Exception as e:
+                            log(
+                                f"   *** Other error occurred: {str(e)} ***"
+                            )
+                            raise e
 
                     elif task['type'].startswith("command"):
 

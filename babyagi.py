@@ -1645,7 +1645,8 @@ def main():
                             "target": path,
                             "result": content
                             }
-                        executed_tasks_storage.remove_target_write_dicts(path)
+                        # TODO: Check Results. Try to disable the process of removing duplicate write execution results
+                        # executed_tasks_storage.remove_target_write_dicts(path)
                         executed_tasks_storage.appendleft(enriched_result)
                         save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 
@@ -1692,7 +1693,8 @@ def main():
                                     "target": path,
                                     "result": new_content
                                     }
-                                executed_tasks_storage.remove_target_write_dicts(path)
+                                # TODO: Check Results. Try to disable the process of removing duplicate write execution results
+                                # executed_tasks_storage.remove_target_write_dicts(path)
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                         

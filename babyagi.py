@@ -16,6 +16,7 @@ from collections import deque
 from typing import Dict, List
 import importlib
 import openai
+from openai import OpenAI
 import google.generativeai as genai
 import tiktoken as tiktoken
 import re
@@ -222,7 +223,9 @@ log("\033[94m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
 log(f"{OBJECTIVE}")
 
 # Configure OpenAI
-openai.api_key = OPENAI_API_KEY
+client = OpenAI(
+  api_key=OPENAI_API_KEY,  # this is also the default, it can be omitted
+)
 genai.configure(api_key=GOOGLE_AI_STUDIO_API_KEY)
 
 # Task storage supporting only a single instance of BabyAGI
@@ -478,6 +481,8 @@ def openai_call(
 
                 #trimmed_prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
 
+                client = OpenAI()
+
                 separated_content = separate_markdown(prompt) # for Vision API
                 if len(separated_content) > 1:
 
@@ -493,7 +498,7 @@ def openai_call(
                     # log("【MESSAGES】")
                     # log(json.dumps(messages))
 
-                    response = openai.ChatCompletion.create(
+                    response = client.chat.completions.create(
                         model=LLM_VISION_MODEL,
                         messages=messages,
                         temperature=temperature,
@@ -506,7 +511,7 @@ def openai_call(
                     log(f"【MODEL】:{model}")
 
                     messages = [{"role": "system", "content": prompt}]
-                    response = openai.ChatCompletion.create(
+                    response = client.chat.completions.create(
                         model=model,
                         messages=messages,
                         temperature=temperature,
@@ -520,37 +525,37 @@ def openai_call(
             log(
                 "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"
             )
-            time.sleep(300)  # Wait 10 seconds and try again
-        except openai.Timeout:
+            time.sleep(300)  # Wait seconds and try again
+        except openai.APITimeoutError:
             log(
                 "   *** OpenAI API timeout occurred. Waiting 10 seconds and trying again. ***"
             )
             time.sleep(10)  # Wait 10 seconds and try again
-        except openai.APIError:
+        except openai.APIError as e:
             log(
-                "   *** OpenAI API error occurred. Waiting 10 seconds and trying again. ***"
+                f"   *** OpenAI API error occurred. Waiting 300 seconds and trying again. error: {str(e)} ***"
             )
-            time.sleep(10)  # Wait 10 seconds and try again
+            time.sleep(300)  # Wait seconds and try again
         except openai.APIConnectionError:
             log(
-                "   *** OpenAI API connection error occurred. Check your network settings, proxy configuration, SSL certificates, or firewall rules. Waiting 10 seconds and trying again. ***"
+                "   *** OpenAI API connection error occurred. Check your network settings, proxy configuration, SSL certificates, or firewall rules. Waiting 300 seconds and trying again. ***"
             )
-            time.sleep(10)  # Wait 10 seconds and try again
-        except openai.InvalidRequestError:
+            time.sleep(300)  # Wait seconds and try again
+        except openai.BadRequestError:
             log(
-                "   *** OpenAI API invalid request. Check the documentation for the specific API method you are calling and make sure you are sending valid and complete parameters. Waiting 10 seconds and trying again. ***"
+                "   *** OpenAI API BadRequestError. Check the documentation for the specific API method you are calling and make sure you are sending valid and complete parameters. Waiting 10 seconds and trying again. ***"
             )
-            time.sleep(10)  # Wait 10 seconds and try again
-        except openai.ServiceUnavailableError:
+            raise # 仕方ないので終了
+        except openai.InternalServerError:
             log(
-                "   *** OpenAI API service unavailable. Waiting 10 seconds and trying again. ***"
+                "   *** OpenAI API InternalServerError. ***"
             )
-            time.sleep(10)  # Wait 10 seconds and try again
+            raise # 仕方ないので終了
         except Exception as e:
             log(
                 f"   *** Other error occurred: {str(e)} ***"
             )
-            time.sleep(30)  # Wait 30 seconds and try again
+            raise # 仕方ないので終了
 
 # Global variable for flagging input
 input_flag = None

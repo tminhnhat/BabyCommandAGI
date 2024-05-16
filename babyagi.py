@@ -747,15 +747,14 @@ class Minesweeper:
 type: modify
 path: /workspace/minesweeper.py
 ```python
-# if action == "r":
-#     game_over = self.board.reveal_cell(row, col)
-# elif action == "f":
-#     self.board.flag_cell(row, col)
-
-if action == "R":
-    game_over = self.board.reveal_cell(row, col)
-elif action == "F":
-    self.board.flag_cell(row, col)
+- if action == "R":
+-     game_over = self.board.reveal_cell(row, col)
+- elif action == "F":
+-     self.board.flag_cell(row, col)
++# if action == "r":
++#     game_over = self.board.reveal_cell(row, col)
++# elif action == "f":
++#     self.board.flag_cell(row, col)
 ```
 
 # Example 2 of tasks output
@@ -1556,14 +1555,14 @@ def write_file(file_path: str, content: str):
 def merge_file(base_content: str, modify_content: str) -> str:
     
     prompt = f"""You are the best engineer.
-Please merge the following modified code into the base code.
+Please merge the following difference code into the base code
 
 Base code:
 ```
 {base_content}
 ```
 
-Modified code:
+Difference code:
 ```
 {modify_content}
 ```

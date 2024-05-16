@@ -573,7 +573,7 @@ def openai_call(
                 return response.choices[0].message.content.strip()
         except openai.RateLimitError:
             log(
-                "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"
+                "   *** The OpenAI API rate limit has been exceeded. Waiting 300 seconds and trying again. ***"
             )
             time.sleep(300)  # Wait seconds and try again
         except openai.APITimeoutError:
@@ -656,7 +656,7 @@ Below is the result of the last execution."""
 {enriched_result["result"]}
 ```"""
         
-    elif enriched_result["type"].startswith("fail_modify_due_to_no_file"):
+    elif enriched_result["type"].startswith("fail_modify_partial_due_to_no_file"):
         prompt += f"""
         
 # Failed to make modifications because the file was missing.
@@ -730,7 +730,7 @@ class Minesweeper:
         self.display_board()
         print("Game Over!")
 ```
-type: modify
+type: modify_partial
 path: /workspace/minesweeper.py
 ```python
 from board import Board
@@ -744,7 +744,7 @@ class Minesweeper:
 
         # ... Rest of the code remains unchanged ...
 ```
-type: modify
+type: modify_partial
 path: /workspace/minesweeper.py
 ```python
 - if action == "R":
@@ -1056,7 +1056,7 @@ class Minesweeper:
         self.display_board()
         print("Game Over!")
 ```
-type: modify
+type: modify_partial
 path: /workspace/minesweeper.py
 ```python
 from board import Board
@@ -1070,7 +1070,7 @@ class Minesweeper:
 
         # ... Rest of the code remains unchanged ...
 ```
-type: modify
+type: modify_partial
 path: /workspace/minesweeper.py
 ```python
 # if action == "r":
@@ -1555,14 +1555,14 @@ def write_file(file_path: str, content: str):
 def merge_file(base_content: str, modify_content: str) -> str:
     
     prompt = f"""You are the best engineer.
-Please merge the following difference code into the base code
+Please merge the following partial revisions into the base code.
 
 Base code:
 ```
 {base_content}
 ```
 
-Difference code:
+Partial revisions:
 ```
 {modify_content}
 ```
@@ -1657,7 +1657,7 @@ def main():
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
             # Check executable command
-            if task['type'].startswith("save") or task['type'].startswith("modify") or task['type'].startswith("command"):
+            if task['type'].startswith("save") or task['type'].startswith("modify_partial") or task['type'].startswith("command"):
 
                 enriched_result = {}
                 is_check_result = False
@@ -1725,13 +1725,13 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("save") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("save") or next_task['type'].startswith("modify_partial") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True
                                 break
 
-                    elif task['type'].startswith("modify"):
+                    elif task['type'].startswith("modify_partial"):
                         log("\033[33m\033[1m" + "*****MODIFY TASK*****\n\n" + "\033[0m\033[0m")
 
                         path = task['path']
@@ -1773,7 +1773,7 @@ def main():
                                     break
                                 else:
                                     next_task = tasks_storage.reference(0)
-                                    if next_task['type'].startswith("save") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
+                                    if next_task['type'].startswith("save") or next_task['type'].startswith("modify_partial") or next_task['type'].startswith("command"):
                                         task = tasks_storage.popleft()
                                     else:
                                         is_next_plan = True
@@ -1785,7 +1785,7 @@ def main():
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                             enriched_result = {
-                                "type": "fail_modify_due_to_no_file",
+                                "type": "fail_modify_partial_due_to_no_file",
                                 "target": path,
                                 "result": content
                                 }
@@ -1892,7 +1892,7 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("save") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("save") or next_task['type'].startswith("modify_partial") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True

@@ -1,6 +1,56 @@
 #!/usr/bin/env python3
 from dotenv import load_dotenv
 
+"""
+Issue: : I attempted to extend the context and enable keyboard control for the snake game, but I was unable to resolve the following error.
+No matter how many times I execute it, it results in a build error. It is likely due to version differences, but it did not automatically investigate and resolve this issue.
+
+Error
+```
+# Command executed most recently
+flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0
+
+# Result of last command executed
+The Return Code for the command is 1:
+Launching lib/main.dart on Web Server in debug mode...
+Waiting for connection from debug service on Web Server...             ⣷⣯⣽⣻⣟⡿⢿⣻⣟⣯⣽⣾⣷⣯⣽⣻
+[K[31mlib/main.dart:153:16: Error: The argument type 'void Function(RawKeyEvent)' can't be assigned to the parameter type 'KeyEventResult Function(FocusNode, RawKeyEvent)?'.[39m
+Waiting for connection from debug service on Web Server...             ⣟
+[K[31m - 'RawKeyEvent' is from 'package:flutter/src/services/raw_keyboard.dart' ('../flutter/packages/flutter/lib/src/services/raw_keyboard.dart').[39m
+Waiting for connection from debug service on Web Server...             ⡿
+[K[31m - 'KeyEventResult' is from 'package:flutter/src/widgets/focus_manager.dart' ('../flutter/packages/flutter/lib/src/widgets/focus_manager.dart').[39m
+Waiting for connection from debug service on Web Server...             ⢿
+[K[31m - 'FocusNode' is from 'package:flutter/src/widgets/focus_manager.dart' ('../flutter/packages/flutter/lib/src/widgets/focus_manager.dart').[39m
+Waiting for connection from debug service on Web Server...             ⣻
+[K[31m        onKey: _onKey,[39m
+Waiting for connection from debug service on Web Server...             ⣟
+[K[31m               ^[39m
+Waiting for connection from debug service on Web Server...             ⣯⣽⣾⣷⣯⣽⣻⣟⡿⢿⣻⣟⣯⣽⣾⣷⣯⣽⣻⣟⡿⢿⣻⣟⣯⣽⣾⣷⣯⣽⣻⣟⡿⢿⣻⣟⣯⣽⣾⣷⣯⣽⣻⣟⡿⢿⣻⣟⣯⣽⣾⣷⣯⣽⣻⣟⡿⢿⣻⣟⣯⣽⣾⣷⣯⣽⣻⣟⡿⢿⣻⣟⣯⣽⣾⣷⣯⣽⣻⣟⡿⢿     9.8s
+[31mFailed to compile application.[39m
+```
+Source
+```
+  void _onKey(RawKeyEvent event) {
+    if (event is RawKeyDownEvent) {
+      switch (event.logicalKey.keyLabel) {
+        case 'Arrow Up':
+          if (direction != 'down') direction = 'up';
+          break;
+        case 'Arrow Down':
+          if (direction != 'up') direction = 'down';
+          break;
+        case 'Arrow Left':
+          if (direction != 'right') direction = 'left';
+          break;
+        case 'Arrow Right':
+          if (direction != 'left') direction = 'right';
+          break;
+      }
+    }
+  }
+```
+"""
+
 # Load default environment variables (.env)
 load_dotenv()
 

@@ -37,6 +37,7 @@ WORKSPACE_FOLDER = "/workspace"
 # Model: GPT, LLAMA, HUMAN, etc.
 LLM_MODEL = os.getenv("LLM_MODEL", os.getenv("OPENAI_API_MODEL", "gpt-4-1106-preview")).lower()
 LLM_VISION_MODEL = os.getenv("LLM_VISION_MODEL", os.getenv("OPENAI_API_VISION_MODEL", "gpt-4-vision-preview")).lower()
+TOKEN_COUNT_MODEL = os.getenv("TOKEN_COUNT_MODEL", "gpt-4-vision-preview").lower()
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -159,9 +160,11 @@ if DOTENV_EXTENSIONS:
 # Extensions support end
 
 log("\033[95m\033[1m" + "\n*****CONFIGURATION*****\n" + "\033[0m\033[0m")
-log(f"Name  : {INSTANCE_NAME}")
-log(f"Mode  : {'alone' if COOPERATIVE_MODE in ['n', 'none'] else 'local' if COOPERATIVE_MODE in ['l', 'local'] else 'distributed' if COOPERATIVE_MODE in ['d', 'distributed'] else 'undefined'}")
-log(f"LLM   : {LLM_MODEL}")
+log(f"Name              : {INSTANCE_NAME}")
+log(f"Mode              : {'alone' if COOPERATIVE_MODE in ['n', 'none'] else 'local' if COOPERATIVE_MODE in ['l', 'local'] else 'distributed' if COOPERATIVE_MODE in ['d', 'distributed'] else 'undefined'}")
+log(f"LLM_MODEL         : {LLM_MODEL}")
+log(f"LLM_VISION_MODEL  : {LLM_VISION_MODEL}")
+log(f"TOKEN_COUNT_MODEL : {TOKEN_COUNT_MODEL}")
 
 # Check if we know what we are doing
 assert OBJECTIVE, "\033[91m\033[1m" + "OBJECTIVE environment variable is missing from .env" + "\033[0m\033[0m"
@@ -274,7 +277,7 @@ class SingleTaskListStorage:
     def is_big_command_result(self, string) -> bool:
 
         try:
-            encoding = tiktoken.encoding_for_model('gpt-4-0314')
+            encoding = tiktoken.encoding_for_model(TOKEN_COUNT_MODEL)
         except:
             encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
 
@@ -473,7 +476,7 @@ def openai_call(
                 # Use 8000 instead of the real limit (8194) to give a bit of wiggle room for the encoding of roles.
                 # TODO: different limits for different models.
 
-                #trimmed_prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
+                #trimmed_prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
 
                 separated_content = separate_markdown(prompt) # for Vision API
                 if len(separated_content) > 1:
@@ -629,7 +632,7 @@ path: {enriched_result["target"]}"""
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
+    prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
@@ -956,7 +959,7 @@ Based on the following OBJECTIVE, Before you begin the following single task, pl
 # List of most recently executed results
 {ExecutedTaskParser().encode(executed_task_list)}"""
     
-    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
+    prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
@@ -1449,7 +1452,7 @@ Otherwise, please output only 'BabyCommandAGI: Continue'.
 # Uncompleted tasks
 {TaskParser().encode(task_list)}"""
 
-    prompt = limit_tokens_from_string(prompt, 'gpt-4-0314', MAX_INPUT_TOKEN)
+    prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += f"""
 
@@ -1479,7 +1482,7 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
     return result
 
 def analyze_command_result(result: str) -> str:
-    lastString = last_tokens_from_string(result, 'gpt-4-0314', MAX_COMMAND_RESULT_TOKEN)
+    lastString = last_tokens_from_string(result, TOKEN_COUNT_MODEL, MAX_COMMAND_RESULT_TOKEN)
     result_lines = lastString.split('\n')[-100:]  # Extract the last 30 lines
     for idx, line in enumerate(result_lines):
         if "fail" in line.lower() or "error" in line.lower():

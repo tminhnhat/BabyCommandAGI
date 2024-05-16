@@ -1779,7 +1779,7 @@ def main():
                             enriched_result = { "type": "command", "target": command, "path": current_dir}
 
                             if all_result.startswith("BabyCommandAGI: Complete"):
-                                enriched_result['result'] = "Success"
+                                enriched_result['result'] = result #"Success"
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                 # Keep only the most recent 30 tasks

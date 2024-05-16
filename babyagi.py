@@ -1736,7 +1736,7 @@ def main():
                                                 executed_tasks_storage.get_tasks(), current_dir)
                                 enriched_result = { "type": "command", "target": command}
                                 if all_result.startswith("The Return Code for the command is 0:"):
-                                    enriched_result['result'] = "Success"
+                                    enriched_result['result'] = all_result #"Success"
                                 else:
                                     enriched_result['result'] = all_result
                                 if os.path.isfile(PWD_FILE):
@@ -1800,7 +1800,7 @@ def main():
                                 is_check_result = True
                                 break
 
-                            enriched_result['result'] = "Success"
+                            enriched_result['result'] = result #"Success"
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                             # Keep only the most recent 30 tasks

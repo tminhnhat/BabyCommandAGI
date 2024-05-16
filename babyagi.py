@@ -571,14 +571,14 @@ def openai_call(
                     )
 
                 return response.choices[0].message.content.strip()
-        except openai.RateLimitError:
+        except openai.RateLimitError as e:
             log(
-                "   *** The OpenAI API rate limit has been exceeded. Waiting 300 seconds and trying again. ***"
+                f"   *** The OpenAI API rate limit has been exceeded. Waiting 300 seconds and trying again. error: {str(e)} ***"
             )
             time.sleep(300)  # Wait seconds and try again
-        except openai.APITimeoutError:
+        except openai.APITimeoutError as e:
             log(
-                "   *** OpenAI API timeout occurred. Waiting 10 seconds and trying again. ***"
+                f"   *** OpenAI API timeout occurred. Waiting 10 seconds and trying again. error: {str(e)} ***"
             )
             time.sleep(10)  # Wait 10 seconds and try again
         except openai.APIError as e:
@@ -586,19 +586,19 @@ def openai_call(
                 f"   *** OpenAI API error occurred. Waiting 300 seconds and trying again. error: {str(e)} ***"
             )
             time.sleep(300)  # Wait seconds and try again
-        except openai.APIConnectionError:
+        except openai.APIConnectionError as e:
             log(
-                "   *** OpenAI API connection error occurred. Check your network settings, proxy configuration, SSL certificates, or firewall rules. Waiting 300 seconds and trying again. ***"
+                f"   *** OpenAI API connection error occurred. Check your network settings, proxy configuration, SSL certificates, or firewall rules. Waiting 300 seconds and trying again. error: {str(e)} ***"
             )
             time.sleep(300)  # Wait seconds and try again
         except openai.BadRequestError as e:
             log(
-                "   *** OpenAI API BadRequestError. Check the documentation for the specific API method you are calling and make sure you are sending valid and complete parameters. Waiting 10 seconds and trying again. ***"
+                f"   *** OpenAI API BadRequestError. Check the documentation for the specific API method you are calling and make sure you are sending valid and complete parameters. Waiting 10 seconds and trying again. error: {str(e)} ***"
             )
             raise e
         except openai.InternalServerError as e:
             log(
-                "   *** OpenAI API InternalServerError. ***"
+                f"   *** OpenAI API InternalServerError. error: {str(e)} ***"
             )
             raise e
         except Exception as e:

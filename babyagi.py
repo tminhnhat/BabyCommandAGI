@@ -1766,7 +1766,7 @@ def main():
                             command = command.replace("sudo ", "")
                             all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
-                            result = analyze_command_result(all_result)
+                            result = all_result #analyze_command_result(all_result)
                             if os.path.isfile(PWD_FILE):
                                 with open(PWD_FILE, "r") as pwd_file:
                                     current_dir = pwd_file.read().strip()

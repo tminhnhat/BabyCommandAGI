@@ -516,32 +516,32 @@ def openai_call(
                     )
 
                 return response.choices[0].message.content.strip()
-        except openai.error.RateLimitError:
+        except openai.RateLimitError:
             log(
                 "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"
             )
             time.sleep(300)  # Wait 10 seconds and try again
-        except openai.error.Timeout:
+        except openai.Timeout:
             log(
                 "   *** OpenAI API timeout occurred. Waiting 10 seconds and trying again. ***"
             )
             time.sleep(10)  # Wait 10 seconds and try again
-        except openai.error.APIError:
+        except openai.APIError:
             log(
                 "   *** OpenAI API error occurred. Waiting 10 seconds and trying again. ***"
             )
             time.sleep(10)  # Wait 10 seconds and try again
-        except openai.error.APIConnectionError:
+        except openai.APIConnectionError:
             log(
                 "   *** OpenAI API connection error occurred. Check your network settings, proxy configuration, SSL certificates, or firewall rules. Waiting 10 seconds and trying again. ***"
             )
             time.sleep(10)  # Wait 10 seconds and try again
-        except openai.error.InvalidRequestError:
+        except openai.InvalidRequestError:
             log(
                 "   *** OpenAI API invalid request. Check the documentation for the specific API method you are calling and make sure you are sending valid and complete parameters. Waiting 10 seconds and trying again. ***"
             )
             time.sleep(10)  # Wait 10 seconds and try again
-        except openai.error.ServiceUnavailableError:
+        except openai.ServiceUnavailableError:
             log(
                 "   *** OpenAI API service unavailable. Waiting 10 seconds and trying again. ***"
             )

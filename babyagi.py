@@ -595,13 +595,13 @@ Below is the result of the last execution."""
 # Content written to file
 {enriched_result["result"]}"""
         
-    elif enriched_result["type"].startswith("fail_create_for_invalide_content"):
+    elif enriched_result["type"].startswith("fail_save_for_invalide_content"):
         prompt += f"""
         
-# Pass that I tried to create but failed.
+# Pass that I tried to save but failed.
 {enriched_result["target"]}
 
-# Invalid content that fails to create
+# Invalid content that fails to save
 ```
 {enriched_result["result"]}
 ```"""
@@ -642,7 +642,7 @@ path: {enriched_result["target"]}"""
     prompt += """
 
 # Example 1 of tasks output
-type: create
+type: save
 path: /workspace/requirements.txt
 ```
 dataclasses
@@ -657,7 +657,7 @@ type: plan
 ```
 Designing a Minesweeper.
 ```
-type: create
+type: save
 path: /workspace/minesweeper.py
 ```python
 from board import Board
@@ -735,7 +735,7 @@ path: /workspace/flappy-bird-assets/
 npm init -y
 npm install express
 ```
-type: create
+type: save
 path: /workspace/flappy-bird-assets/server.js
 ```
 const express = require('express');
@@ -749,7 +749,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Flappy Bird game running at http://0.0.0.0:${PORT}/`);
 });
 ```
-type: create
+type: save
 path: /workspace/flappy-bird-assets/index.html
 ```
 <!DOCTYPE html>
@@ -765,7 +765,7 @@ path: /workspace/flappy-bird-assets/index.html
 </body>
 </html>
 ```
-type: create
+type: save
 path: /workspace/flappy-bird-assets/flappy-bird.js
 ```
 let bird;
@@ -969,7 +969,7 @@ Based on the following OBJECTIVE, Before you begin the following single task, pl
     prompt += """
 
 # Example 1 of tasks output
-type: create
+type: save
 path: /workspace/requirements.txt
 ```
 dataclasses
@@ -984,7 +984,7 @@ type: plan
 ```
 Designing a Minesweeper.
 ```
-type: create
+type: save
 path: /workspace/minesweeper.py
 ```python
 from board import Board
@@ -1062,7 +1062,7 @@ path: /workspace/flappy-bird-assets/
 npm init -y
 npm install express
 ```
-type: create
+type: save
 path: /workspace/flappy-bird-assets/server.js
 ```
 const express = require('express');
@@ -1076,7 +1076,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Flappy Bird game running at http://0.0.0.0:${PORT}/`);
 });
 ```
-type: create
+type: save
 path: /workspace/flappy-bird-assets/index.html
 ```
 <!DOCTYPE html>
@@ -1092,7 +1092,7 @@ path: /workspace/flappy-bird-assets/index.html
 </body>
 </html>
 ```
-type: create
+type: save
 path: /workspace/flappy-bird-assets/flappy-bird.js
 ```
 let bird;
@@ -1608,7 +1608,7 @@ def main():
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
             # Check executable command
-            if task['type'].startswith("create") or task['type'].startswith("modify") or task['type'].startswith("command"):
+            if task['type'].startswith("save") or task['type'].startswith("modify") or task['type'].startswith("command"):
 
                 enriched_result = {}
                 is_check_result = False
@@ -1616,7 +1616,7 @@ def main():
                 is_complete = False
                 while True:
 
-                    if task['type'].startswith("create"):
+                    if task['type'].startswith("save"):
                         log("\033[33m\033[1m" + "*****CREATE TASK*****\n\n" + "\033[0m\033[0m")
 
                         path = task['path']
@@ -1638,7 +1638,7 @@ def main():
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                             enriched_result = {
-                                "type": "fail_create_for_invalide_content",
+                                "type": "fail_save_for_invalide_content",
                                 "target": path,
                                 "result": content
                                 }
@@ -1676,7 +1676,7 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("save") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True
@@ -1724,7 +1724,7 @@ def main():
                                     break
                                 else:
                                     next_task = tasks_storage.reference(0)
-                                    if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
+                                    if next_task['type'].startswith("save") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
                                         task = tasks_storage.popleft()
                                     else:
                                         is_next_plan = True
@@ -1843,7 +1843,7 @@ def main():
                             break
                         else:
                             next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
+                            if next_task['type'].startswith("save") or next_task['type'].startswith("modify") or next_task['type'].startswith("command"):
                                 task = tasks_storage.popleft()
                             else:
                                 is_next_plan = True

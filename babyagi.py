@@ -104,9 +104,9 @@ assert RESULTS_STORE_NAME, "\033[91m\033[1m" + "RESULTS_STORE_NAME environment v
 # Run configuration
 INSTANCE_NAME = os.getenv("INSTANCE_NAME", os.getenv("BABY_NAME", "BabyCommandAGI"))
 COOPERATIVE_MODE = "none"
-# If USER_INPUT_LLM is set to True, the LLM will automatically respond if there is a confirmation when executing a command, 
+# If LLM_COMMAND_RESPONSE is set to True, the LLM will automatically respond if there is a confirmation when executing a command, 
 # but be aware that this will increase the number of times the LLM is used and increase the cost of the API, etc.
-USER_INPUT_LLM = True
+LLM_COMMAND_RESPONSE = True
 JOIN_EXISTING_OBJECTIVE = False
 MAX_OUTPUT_TOKEN = 4 * 1024 # It seems that the maximum output is 4K. 'max_tokens is too large: 64000. This model supports at most 4096 completion tokens, whereas you provided 64000.'
 MAX_INPUT_TOKEN = 128 * 1024 - MAX_OUTPUT_TOKEN - 200 # 200 is the length of the fixed text added at the end.
@@ -614,12 +614,12 @@ def check_input():
     global input_flag
     while True:
         time.sleep(2)
-        if input_flag == 'f':
+        if input_flag == "f" or input_flag == "c":
             continue
         log("\n" + "\033[33m\033[1m" + 'The state has been set so that if you input "f", it will go to feedback.' + "\033[0m\033[0m" + "\n")
         inp = input()
-        if inp == 'f':
-            input_flag = 'f'
+        if inp == "f" or inp == "c":
+            input_flag = inp
 
 # Thread for non-blocking input check
 input_thread = threading.Thread(target=check_input, daemon=True)
@@ -1430,15 +1430,22 @@ def execution_command(objective: str, command: str, task_list: deque,
         notification_time = time.time()
         print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
 
+        result = ""
+        end_prcessing = False
+        wait_input = False
+
         while process.poll() is None:
 
-            if input_flag == 'f':
-                log("\n" + "\033[33m\033[1m" + 'The "f" is pressed and it goes to "feedback".' + "\033[0m\033[0m" + "\n")
-                return 'BabyCommandAGI: Complete'
-            
             if notification_time + 30 < time.time():
                 notification_time = time.time()
-                print("\n" + "\033[33m\033[1m" + '"f": go to "feedback"' + "\033[0m\033[0m" + "\n")
+                if end_prcessing:
+                    end_prcessing = False
+                    wait_input = False
+                else:
+                    if wait_input:
+                        print("\n" + "\033[33m\033[1m" + 'Force termination of the process. Please enter "c".' + "\033[0m\033[0m" + "\n")
+                    else:
+                        print("\n" + "\033[33m\033[1m" + '"f": go to "feedback". Since the process is running, you can respond by typing "c".' + "\033[0m\033[0m" + "\n")
             
             # Check for output with a timeout of some minutes
             rlist, wlist, xlist = select.select([pty_master], [], [], 2)
@@ -1448,8 +1455,8 @@ def execution_command(objective: str, command: str, task_list: deque,
                 std_blocks.extend(list_std_blocks(xlist))
 
             else:
-                if USER_INPUT_LLM:
-                    if time.time() - start_time > 300:
+                if LLM_COMMAND_RESPONSE:
+                    if time.time() - start_time > 300 and result == "":
                         start_time = time.time()
 
                         # Concatenate the output and split it by lines
@@ -1458,37 +1465,82 @@ def execution_command(objective: str, command: str, task_list: deque,
                         # No output received within 5 seconds, call the check_wating_for_response function with the last 3 lines or the entire content
                         lastlines = stdout_lines[-3:] if len(stdout_lines) >= 3 else stdout_lines
                         lastlines = "\n".join(lastlines)
-                        input = user_input_for_waiting(objective, lastlines, command,
+                        llm_command_response = llm_command_response_for_waiting(objective, lastlines, command,
                                                 "".join(std_blocks), task_list,
                                                 executed_task_list, current_dir)
-                        if input.startswith('BabyCommandAGI: Complete'):
-                            return input
-                        elif input.startswith('BabyCommandAGI: Interruption'):
-                            break
-                        elif input.startswith('BabyCommandAGI: Continue'):
+                        if llm_command_response.startswith('BabyCommandAGI: Complete'):
+                            result = 'Waiting for user feedback'
+                        elif llm_command_response.startswith('BabyCommandAGI: Interruption'):
+                            result = 'The command was interrupted by BabyCommandAGI'
+                        elif llm_command_response.startswith('BabyCommandAGI: Continue'):
                             pass
                         else:
-                            input += '\n'
-                            os.write(pty_master, input.encode())
+                            llm_command_response += '\n'
+                            os.write(pty_master, llm_command_response.encode())
 
-        os.close(pty_master)
-        pty_master = None
+            if input_flag == "f":
+                result = 'Waiting for user feedback'
+            
+            if result != "":
+                if input_flag is None:
+                    if wait_input == False:
+                        wait_input = True
+                        log("\n" + "\033[33m\033[1m" + 'Force termination of the process. Please enter "c".' + "\033[0m\033[0m" + "\n")
+                    continue
+
+                if end_prcessing:
+                    continue
+                log("\n" + "\033[33m\033[1m" + 'Force termination of the process. If the process requires a response such as termination, enter the response. If it is not necessary, leave it empty and press [Enter].' + "\033[0m\033[0m" + "\n")
+                response = input()
+                if response == "":
+                    break
+                response += '\n'
+                os.write(pty_master, response.encode())
+                end_prcessing = True
+                notification_time = time.time()
+                start_time = time.time()
+
+                if input_flag == "c":
+                    input_flag = None
+
+            elif input_flag == "c":
+                log("\n" + "\033[33m\033[1m" + 'Please enter your response.' + "\033[0m\033[0m" + "\n")
+                response = input()
+                response += '\n'
+                os.write(pty_master, response.encode())
+                notification_time = time.time()
+                start_time = time.time()
+                input_flag = None
+
+
         out = "".join(std_blocks)
 
-        with open("/tmp/cmd_exit_status", "r") as status_file:
-            cmd_exit_status = int(status_file.read().strip())
+        if input_flag == "f":
+            result = 'Waiting for user feedback'
 
-        result = f"The Return Code for the command is {cmd_exit_status}:\n{out}"
+        if result == "":
+            with open("/tmp/cmd_exit_status", "r") as status_file:
+                cmd_exit_status = int(status_file.read().strip())
+
+            result = f"The Return Code for the command is {cmd_exit_status}"
+
+        all_result = f"{result}:\n{out}"
+        result = all_result
 
         log("\n" + "\033[33m\033[1m" + "[[Output]]" + "\033[0m\033[0m" + "\n\n" +
             result + "\n\n")
     finally:
+        os.close(pty_master)
+        pty_master = None
         process.terminate()
         process.wait()
+        if input_flag == "c":
+            input_flag = None
+
     
     return result
 
-def user_input_for_waiting(objective: str, lastlines: str, command: str,
+def llm_command_response_for_waiting(objective: str, lastlines: str, command: str,
                            all_output_for_command: str, task_list: deque,
                            executed_task_list: deque, current_dir: str) -> str:
     prompt = f"""You are an expert in shell commands to achieve the "{objective}".
@@ -1593,14 +1645,8 @@ def user_feedback() -> str:
     response = input()
     log('\n')
 
-    # If the objective has been achieved
-    if response.lower() == 'y':
-        return 'y'
-    
-    # If the objective has not been achieved
-    else:
-        log("\033[33m\033[1m" + "[[Feedback]]" + "\n\n" + response + "\033[0m\033[0m" + "\n")
-        return response
+    log("\033[33m\033[1m" + "[[Feedback]]" + "\n\n" + response + "\033[0m\033[0m" + "\n")
+    return response
 
 def check_first_two_lines_same_comment_style(text):
     """
@@ -1636,7 +1682,7 @@ if tasks_storage.is_empty() or JOIN_EXISTING_OBJECTIVE:
 
 pty_master = None
 
-def main():
+def execute_objective():
     global OBJECTIVE
     global input_flag
 
@@ -1850,7 +1896,7 @@ def main():
 
                             enriched_result = { "type": "command", "target": command, "path": current_dir}
 
-                            if all_result.startswith("BabyCommandAGI: Complete"):
+                            if all_result.startswith("Waiting for user feedback"):
                                 enriched_result['result'] = result #"Success"
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
@@ -1928,30 +1974,35 @@ def main():
         time.sleep(1)
 
     log("\033[92m\033[1m" + "*****COMPLETE*****\n\n" + "\033[0m\033[0m")
-    while True:
-        if input_flag != "f":
-            log("\n" + "\033[33m\033[1m" + 'If the OBJECTIVE has not been achieved, please input "f". The AI will continue to execute based on the feedback.' + "\033[0m\033[0m" + "\n")
-            while True:
-                time.sleep(1)
-                if input_flag == "f":
-                    break
-        feedback = user_feedback()
-        enriched_result = {
-            "type": "feedback",
-            "target": "user",
-            "result": feedback
-        }
-        executed_tasks_storage.appendleft(enriched_result)
-        save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
 
-        objective_list = deque([feedback, ORIGINAL_OBJECTIVE])
-        save_data(objective_list, OBJECTIVE_LIST_FILE)
-        OBJECTIVE = parse_objective(objective_list)
-        tasks_storage.appendleft({"type": "plan", "content": feedback})
-        save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+    if input_flag != "f":
         input_flag = None
-        main()
-        break
+        log("\n" + "\033[33m\033[1m" + 'If the OBJECTIVE has not been achieved, please input "f". The AI will continue to execute based on the feedback.' + "\033[0m\033[0m" + "\n")
+        while True:
+            time.sleep(1)
+            if input_flag == "f":
+                break
+            elif input_flag is not None:
+                input_flag = None
+    feedback = user_feedback()
+    enriched_result = {
+        "type": "feedback",
+        "target": "user",
+        "result": feedback
+    }
+    executed_tasks_storage.appendleft(enriched_result)
+    save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+
+    objective_list = deque([feedback, ORIGINAL_OBJECTIVE])
+    save_data(objective_list, OBJECTIVE_LIST_FILE)
+    OBJECTIVE = parse_objective(objective_list)
+    tasks_storage.appendleft({"type": "plan", "content": feedback})
+    save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+    input_flag = None
+
+def main():
+    while True:
+        execute_objective()
 
 if __name__ == "__main__":
     main()

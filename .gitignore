@@ -29,6 +29,8 @@ env_dump/*
 !env_dump/.gitkeep
 workspace/*
 !workspace/.gitkeep
+workspace_backup/*
+!workspace_backup/.gitkeep
 
 # for node
 chroma/

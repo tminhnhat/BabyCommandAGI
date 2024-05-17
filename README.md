@@ -78,7 +78,7 @@ Please execute the following:
 docker-compose up -d && docker attach babyagi
 ```
 
-**Note: Even if you exit with Ctrl+C, it will not stop unless you stop the container with Docker Desktop or similar. Please be careful.**
+**Note: Even if you exit with Ctrl+C, it will not stop unless you run ```./clean.sh``` or stop the container using Docker Desktop. Please be careful.**
 
 **Note: The agent might loop indefinitely if it cannot achieve its objective. Please be aware of the cost of OpenAI API usage.**
 
@@ -99,6 +99,16 @@ If you want to reset the environment, please delete the Docker container of Baby
 ## Feedback to AI
 
 By entering "f", you can give user feedback to the AI. This allows you to provide feedback to the AI on information that may not be clear from the CLI, like a GUI.
+
+# Useful commands
+
+- ```. /clean.sh```
+```workspace```, resets the environment (container). Also ```. /new_store.sh``` also executes
+- ```. /backup_workspace.sh```
+Backup your ``workspace`` by creating a folder with the current time in ``workspace_backup``.
+(Note that environment (container) and BabyCommandAGI data will not be backed up.)
+- ```. /new_store.sh```
+New BabyCommandAGI data (remembered information) will be created. Because of the switch to new data, BabyCommandAGI will not remember anything.
 
 # Logs
 

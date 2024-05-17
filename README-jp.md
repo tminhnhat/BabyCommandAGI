@@ -78,7 +78,7 @@ https://twitter.com/saten_work/status/1667126272072491009
 docker-compose up -d && docker attach babyagi
 ```
 
-**注意：Ctrl+Cで終了してもDocker Desktopなどでコンテナ停止しないと停止しなくなりました。ご注意ください。**
+**注意：Ctrl+Cで終了しても```./clean.sh```の実行やDocker Desktopなどでコンテナ停止しないと停止しなくなりました。ご注意ください。**
 
 **注意：目的を達成できず、ループし続けることがあります。OpenAI API の使用料にご注意ください。**
 
@@ -99,6 +99,16 @@ OBJECTIVEを変更すると将来のタスク一覧とOBJECTIVEのフィード�
 ## AIにフィードバック
 
 "f"を入力した際にちゃんと目的が達成できたかユーザーのフィードバックをAIに与えられます。これでGUIのようなCLIからわからない情報もAIにフィードバックできます。
+
+# 便利コマンド
+
+- ```./clean.sh```
+```workspace```、環境(コンテナ)をリセットします。また```./new_store.sh```も実行します
+- ```./backup_workspace.sh```
+```workspace```を```workspace_backup```に現在時刻のフォルダを作成してバックアップします
+(環境(コンテナ)やBabyCommandAGIのデータはバックアップされないのでご注意ください)
+- ```./new_store.sh```
+BabyCommandAGIのデータ(覚えている情報)を新しくします。新しいデータに切り替わるため、BabyCommandAGIは何も覚えていない状態になります。
 
 # ログ
 

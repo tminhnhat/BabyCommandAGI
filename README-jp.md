@@ -28,7 +28,7 @@ BabyCommandAGIは様々なケースで使用できる可能性があります。
 ### プログラミング例
 
 - リバーシ
-https://x.com/saten_work/status/1674855573412810753
+https://x.com/saten_work/status/1791550524988490053
 - スネークゲーム
 https://x.com/saten_work/status/1723509089471492563
 
@@ -37,6 +37,11 @@ https://x.com/saten_work/status/1723509089471492563
 - コンテナのLinux環境にFlutterをインストールし、Flutterアプリを作成して、Webサーバーを立ち上げ、コンテナ外からアクセスできるようにさせる
 
 https://twitter.com/saten_work/status/1667126272072491009
+
+## その他
+
+- 天気予報の取得
+https://x.com/saten_work/status/1791558481432232355
 
 # 仕組み
 

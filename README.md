@@ -28,7 +28,7 @@ Create an app automatically just by providing feedback
 ### Programming Examples
 
 - Reversi
-https://x.com/saten_work/status/1674855573412810753
+https://x.com/saten_work/status/1791550524988490053
 - Snake Game
 https://x.com/saten_work/status/1723509089471492563
 
@@ -37,6 +37,11 @@ https://x.com/saten_work/status/1723509089471492563
 - Install Flutter in a Linux container environment, create a Flutter app, launch a web server, and make it accessible from outside the container
 
 https://twitter.com/saten_work/status/1667126272072491009
+
+## Other
+
+- Get weather forecast
+https://x.com/saten_work/status/1791558481432232355
 
 # Mechanism
 

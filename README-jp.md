@@ -102,11 +102,14 @@ OBJECTIVEを変更すると将来のタスク一覧とOBJECTIVEのフィード�
 # 便利コマンド
 
 - ```./clean.sh```
+
 ```workspace```、環境(コンテナ)をリセットします。また```./new_store.sh```も実行します
 - ```./backup_workspace.sh```
+
 ```workspace_backup```に現在時刻のフォルダを作成して```workspace```をバックアップします
 (環境(コンテナ)やBabyCommandAGIのデータはバックアップされないのでご注意ください)
 - ```./new_store.sh```
+
 BabyCommandAGIのデータ(覚えている情報)を新しくします。新しいデータに切り替わるため、BabyCommandAGIは何も覚えていない状態になります。
 
 # ログ

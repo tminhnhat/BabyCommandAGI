@@ -102,11 +102,14 @@ Normally, you cannot respond with y or n to a command that AI is executing, but 
 # Useful commands
 
 - ```. /clean.sh```
+
 ```workspace```, resets the environment (container). Also ```. /new_store.sh``` also executes
 - ```. /backup_workspace.sh```
+
 Backup your ``workspace`` by creating a folder with the current time in ``workspace_backup``.
 (Note that environment (container) and BabyCommandAGI data will not be backed up.)
 - ```. /new_store.sh```
+
 New BabyCommandAGI data (remembered information) will be created. Because of the switch to new data, BabyCommandAGI will not remember anything.
 
 # Logs

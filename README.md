@@ -69,9 +69,7 @@ Please follow the steps below:
 2. Enter the BabyCommandAGI directory with ```cd```.
 3. Create a file to insert environment variables with ```cp .env.example .env```.
 4. Set the OpenAI key to OPENAI_API_KEY.
-5. Set the name of the table where the task results are saved to the TABLE_NAME variable.
-6. (Optional) Set the objective of the task management system to the OBJECTIVE variable.
-7. (Optional) Set the system's first task to the INITIAL_TASK variable.
+5. (Optional) Set the objective of the task management system to the OBJECTIVE variable.
 
 # Execution (Docker)
 
@@ -93,17 +91,13 @@ If you fail, you can resume from where you left off by running it again.
 
 Changing the OBJECTIVE will clear the list of future tasks and OBJECTIVE feedback.
 
-The following are saved up to the point where they were executed:
-- Tasks executed up to a certain point are saved under the ```data``` folder.
-- The last current directory is under the ```pwd``` folder.
-- The dump of the last environment variables is under the ```env_dump``` folder.
-
-If you want to reset the environment, please delete the Docker container of BabyCommandAGI once and change the RESULTS_STORE_NAME in ```.env```.
-(BabyCommandAGI executes various commands, so the environment may be broken)
-
 ## Feedback to AI
 
 By entering "f", you can give user feedback to the AI. This allows you to provide feedback to the AI on information that may not be clear from the CLI, like a GUI.
+
+## Input while AI is executing a command
+
+Normally, you cannot respond with y or n to a command that AI is executing, but entering "c" will put you in a mode where you can respond.
 
 # Useful commands
 
@@ -119,6 +113,13 @@ New BabyCommandAGI data (remembered information) will be created. Because of the
 
 The logs during execution are saved under the ```log``` folder.
 The log file name is determined by the OBJECTIVE identifier and the RESULTS_STORE_NAME.
+
+# Saved Data
+
+The following are saved up to the point where they were executed:
+- Tasks executed up to a certain point are saved under the ```data``` folder.
+- The last current directory is under the ```pwd``` folder.
+- The dump of the last environment variables is under the ```env_dump``` folder.
 
 # Contributing
 

@@ -1,17 +1,17 @@
-# ⭐️Now supported GPT-4o⭐️
+# ⭐️Now supported Claude 3.5 Sonnet and GPT-4o⭐️
 
 # Precautions
 
 - There is a risk of inadvertently damaging the environment. Please execute primarily in a virtual environment such as Docker.
 - The objective may not be achieved and it may continue to loop. The amount of API usage may increase in such cases, so please use responsibly.
-- It is recommended to use GPT-4o or higher as it has been mainly verified with GPT-4o or higher. 
+- It is recommended to use Claude 3.5 Sonnet or higher as it has been mainly verified with Claude 3.5 Sonnet or higher. 
 (If you are using GPT-4 Turbo, it is recommended to use v3 of the older BabyCommandAGI.)
 
 # Objective
 
 BabyCommandAGI is designed to test what happens when you combine CLI and LLM, which are older computer interaction interfaces than GUI. Those who are not familiar with computers may not know, but CLI is an old computer interaction interface. Even now, many computer operations can be done through CLI (common Linux servers mainly use CLI). Imagine LLM and CLI having a conversation. It's exciting to think about what could happen. I hope you will all try it out and find new use cases.
 
-This system is recommended to be run with an API of GPT-4o or higher.
+This system is recommended to be run with an API of Claude 3.5 Sonnet or higher.
 
 This Python script system is based on [BabyAGI](https://github.com/yoheinakajima/babyagi). However, the part that was the thinking part of [BabyAGI](https://github.com/yoheinakajima/babyagi) has been greatly simplified in order to execute commands efficiently. (This may change later)
 

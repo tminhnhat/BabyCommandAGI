@@ -68,7 +68,7 @@ https://x.com/saten_work/status/1791558481432232355
 1. ```git clone https://github.com/saten-private/BabyCommandAGI.git```
 2. ```cd```でBabyCommandAGIのディレクトリに入ってくださ
 3. ```cp .env.example .env``` で環境変数を入れるファイルを作ります
-4. OPENAI_API_KEYにOpenAIキーを設定します。
+4. ANTHROPIC_API_KEYまたはOPENAI_API_KEYを設定します。
 5. （オプション）OBJECTIVE変数にタスク管理システムの目的を設定します。
 
 # 実行(Docker)
@@ -83,7 +83,7 @@ docker-compose up -d && docker attach babyagi
 
 **注意：Ctrl+Cで終了しても```./clean.sh```の実行やDocker Desktopなどでコンテナ停止しないと停止しなくなりました。ご注意ください。**
 
-**注意：目的を達成できず、ループし続けることがあります。OpenAI API の使用料にご注意ください。**
+**注意：目的を達成できず、ループし続けることがあります。AnthropicやOpenAIのAPIの使用料にご注意ください。**
 
 ```workspace```フォルダにAIの生成物が作成されていきます。
 

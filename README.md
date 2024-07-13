@@ -68,7 +68,7 @@ Please follow the steps below:
 1. ```git clone https://github.com/saten-private/BabyCommandAGI.git```
 2. Enter the BabyCommandAGI directory with ```cd```.
 3. Create a file to insert environment variables with ```cp .env.example .env```.
-4. Set the OpenAI key to OPENAI_API_KEY.
+4. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.
 5. (Optional) Set the objective of the task management system to the OBJECTIVE variable.
 
 # Execution (Docker)
@@ -83,7 +83,7 @@ docker-compose up -d && docker attach babyagi
 
 **Note: Even if you exit with Ctrl+C, it will not stop unless you run ```./clean.sh``` or stop the container using Docker Desktop. Please be careful.**
 
-**Note: The agent might loop indefinitely if it cannot achieve its objective. Please be aware of the cost of OpenAI API usage.**
+**Note: The agent might loop indefinitely if it cannot achieve its objective. Please be aware of the cost of Anthropic and OpenAI APIs usage.**
 
 The AI's generated items will be created in the ```workspace``` folder.
 

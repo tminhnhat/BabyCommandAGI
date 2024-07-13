@@ -65,6 +65,8 @@ import logging
 from collections import deque
 from typing import Dict, List
 import importlib
+import anthropic
+from anthropic import Anthropic
 import openai
 from openai import OpenAI
 import google.generativeai as genai
@@ -92,6 +94,7 @@ TOKEN_COUNT_MODEL = os.getenv("TOKEN_COUNT_MODEL", "gpt-4-vision-preview").lower
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+ANTHROPIC_API_KEY= os.getenv("ANTHROPIC_API_KEY", "")
 GOOGLE_AI_STUDIO_API_KEY =  os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
 
 if not (LLM_MODEL.startswith("llama") or LLM_MODEL.startswith("human")):
@@ -108,8 +111,14 @@ COOPERATIVE_MODE = "none"
 # but be aware that this will increase the number of times the LLM is used and increase the cost of the API, etc.
 LLM_COMMAND_RESPONSE = True
 JOIN_EXISTING_OBJECTIVE = False
-MAX_OUTPUT_TOKEN = 4 * 1024 # It seems that the maximum output is 4K. 'max_tokens is too large: 64000. This model supports at most 4096 completion tokens, whereas you provided 64000.'
-MAX_INPUT_TOKEN = 128 * 1024 - MAX_OUTPUT_TOKEN - 200 # 200 is the length of the fixed text added at the end.
+MAX_MARGIN_TOKEN = 200 # Allow enough tokens to avoid being on the edge
+MAX_MODEL_OUTPUT_TOKEN = 4 * 1024 # default value
+MAX_MODEL_INPUT_TOKEN = 128 * 1024 # default value
+# Maximum number of tokens is confirmed below
+# https://context.ai/compare/gpt-4o/claude-3-5-sonnet
+MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 4 * 1024
+MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
+
 MAX_COMMAND_RESULT_TOKEN = 8 * 1024
 MAX_DUPLICATE_COMMAND_RESULT_TOKEN = 1 * 1024
 
@@ -119,7 +128,10 @@ INITIAL_TASK = os.getenv("INITIAL_TASK", os.getenv("FIRST_TASK", ""))
 
 # Model configuration
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.0))
+ANTHROPIC_TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", 0.0))
 GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", 0.0))
+
+TEMPERATURE = OPENAI_TEMPERATURE # default value
 
 #Set Variables
 hash_object = hashlib.sha1(ORIGINAL_OBJECTIVE.encode())
@@ -262,6 +274,14 @@ if LLM_MODEL.startswith("gpt-4"):
         + "\033[0m\033[0m"
     )
 
+if LLM_MODEL.startswith("claude-3-5-sonnet"):
+    MAX_MODEL_OUTPUT_TOKEN = MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN
+    MAX_MODEL_INPUT_TOKEN = MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN
+    TEMPERATURE = ANTHROPIC_TEMPERATURE
+
+if LLM_MODEL.startswith("gemini"):
+    TEMPERATURE = GEMINI_TEMPERATURE
+
 if LLM_MODEL.startswith("human"):
     log(
         "\033[91m\033[1m"
@@ -269,11 +289,24 @@ if LLM_MODEL.startswith("human"):
         + "\033[0m\033[0m"
     )
 
+MAX_OUTPUT_TOKEN = MAX_MODEL_OUTPUT_TOKEN
+MAX_INPUT_TOKEN = MAX_MODEL_INPUT_TOKEN - MAX_OUTPUT_TOKEN - MAX_MARGIN_TOKEN # default value
+
+
+log(
+    "\033[91m\033[1m"
+    + "\n*****POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+    + "\033[0m\033[0m"
+)
+
 log("\033[94m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
 log(f"{OBJECTIVE}")
 
 # Configure OpenAI
-client = OpenAI(
+anthropic_client = Anthropic(
+    api_key=ANTHROPIC_API_KEY
+)
+openai_client = OpenAI(
   api_key=OPENAI_API_KEY,  # this is also the default, it can be omitted
 )
 genai.configure(api_key=GOOGLE_AI_STUDIO_API_KEY)
@@ -329,14 +362,28 @@ class SingleTaskListStorage:
 
     def is_big_command_result(self, string) -> bool:
 
-        try:
-            encoding = tiktoken.encoding_for_model(TOKEN_COUNT_MODEL)
-        except:
-            encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+        if TOKEN_COUNT_MODEL.lower().startswith("claude-3"):
+            # Claude 3 does not support a way to find out the number of tokens in advance
+            # https://github.com/anthropics/anthropic-sdk-python/issues/375#issuecomment-1999982035
+            # The count to get OpenAI's tokenizer is often low, as it seems to be about +-15% of OpenAI's tokenizers, so I estimate and calculate at -20% based on gpt-4o.  
+            # https://www.reddit.com/r/ClaudeAI/comments/1bgg5v0/comment/kv9fais/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+            # https://www.reddit.com/r/ClaudeAI/comments/1bgg5v0/comment/l0phtj4/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+            try:
+                encoding = tiktoken.encoding_for_model('gpt-4o')
+            except:
+                encoding = tiktoken.encoding_for_model('gpt-4o')  # Fallback for others.
+            encoded = encoding.encode(string)
 
-        encoded = encoding.encode(string)
+            length = int(len(encoded) * (1.0 - 0.2))
 
-        return MAX_DUPLICATE_COMMAND_RESULT_TOKEN <= len(encoded)
+            return MAX_DUPLICATE_COMMAND_RESULT_TOKEN <= length
+        else:
+            try:
+                encoding = tiktoken.encoding_for_model(TOKEN_COUNT_MODEL)
+            except:
+                encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+            encoded = encoding.encode(string)
+            return MAX_DUPLICATE_COMMAND_RESULT_TOKEN <= len(encoded)
 
 # Task list
 temp_task_list = load_data(TASK_LIST_FILE) #deque([])
@@ -371,10 +418,22 @@ log("\n")
 def limit_tokens_from_string(string: str, model: str, limit: int) -> str:
     """Limits the string to a number of tokens (estimated)."""
 
-    try:
-        encoding = tiktoken.encoding_for_model(model)
-    except:
-        encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+    if model.lower().startswith("claude-3"):
+        # Claude 3 does not support a way to find out the number of tokens in advance
+        # https://github.com/anthropics/anthropic-sdk-python/issues/375#issuecomment-1999982035
+        # The count to get OpenAI's tokenizer is often low, as it seems to be about +-15% of OpenAI's tokenizers, so I estimate and calculate at -20% based on gpt-4o.  
+        # https://www.reddit.com/r/ClaudeAI/comments/1bgg5v0/comment/kv9fais/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+        # https://www.reddit.com/r/ClaudeAI/comments/1bgg5v0/comment/l0phtj4/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+        try:
+            encoding = tiktoken.encoding_for_model('gpt-4o')
+        except:
+            encoding = tiktoken.encoding_for_model('gpt-4o')  # Fallback for others.
+        limit = int(limit * (1.0 - 0.2))
+    else:
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except:
+            encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
 
     encoded = encoding.encode(string)
 
@@ -383,10 +442,22 @@ def limit_tokens_from_string(string: str, model: str, limit: int) -> str:
 def last_tokens_from_string(string: str, model: str, last: int) -> str:
     """Limits the string to a number of tokens (estimated)."""
 
-    try:
-        encoding = tiktoken.encoding_for_model(model)
-    except:
-        encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+    if model.lower().startswith("claude-3"):
+        # Claude 3 does not support a way to find out the number of tokens in advance
+        # https://github.com/anthropics/anthropic-sdk-python/issues/375#issuecomment-1999982035
+        # The count to get OpenAI's tokenizer is often low, as it seems to be about +-15% of OpenAI's tokenizers, so I estimate and calculate at -20% based on gpt-4o.  
+        # https://www.reddit.com/r/ClaudeAI/comments/1bgg5v0/comment/kv9fais/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+        # https://www.reddit.com/r/ClaudeAI/comments/1bgg5v0/comment/l0phtj4/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+        try:
+            encoding = tiktoken.encoding_for_model('gpt-4o')
+        except:
+            encoding = tiktoken.encoding_for_model('gpt-4o')  # Fallback for others.
+        last = int(last * (1.0 - 0.2))
+    else:
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except:
+            encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
 
     encoded = encoding.encode(string)
 
@@ -440,7 +511,38 @@ def encode_image(image_path):
         encoded_string = base64.b64encode(image_file.read()).decode()
     return encoded_string
 
-def modify_parts_to_new_format(parts):
+def modify_parts_to_new_format_anthropic(parts):
+    """
+    Modifies the given array of Markdown parts to a new specified format.
+
+    Args:
+    parts (list): A list containing separated parts of Markdown content including images and text.
+
+    Returns:
+    list: A list of parts in the new specified format.
+    """
+    new_format_parts = []
+
+    for part in parts:
+        if isinstance(part, str):  # Text part
+            new_format_parts.append({"type": "text", "text": part})
+        elif isinstance(part, dict):
+            if 'url' in part:  # Image with URL
+                raise Exception("Image with URL is not supported in Anthropic API")
+            elif 'path' in part:  # Local image file
+                base64_image = encode_image(part['path'])
+                new_format_parts.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": base64_image
+                    }
+                })
+
+    return new_format_parts
+
+def modify_parts_to_new_format_openai(parts):
     """
     Modifies the given array of Markdown parts to a new specified format.
 
@@ -464,10 +566,10 @@ def modify_parts_to_new_format(parts):
 
     return new_format_parts
 
-def openai_call(
+def llm_call(
     prompt: str,
     model: str = LLM_MODEL,
-    temperature: float = OPENAI_TEMPERATURE,
+    temperature: float = TEMPERATURE,
     max_tokens: int = MAX_OUTPUT_TOKEN,
 ):
     while True:
@@ -507,7 +609,7 @@ def openai_call(
                 system_prompt = prompt
 
                 generation_config = {
-                    "temperature" : GEMINI_TEMPERATURE,
+                    "temperature" : temperature,
                     "max_output_tokens": 8192,
                     "response_mime_type": "text/plain",
                 }
@@ -525,13 +627,57 @@ def openai_call(
                 response = chat_session.send_message(prompt)
 
                 return response.text.strip()
+            elif model.lower().startswith("claude"):
+                log(f"【MODEL】:{model}")
+
+                anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
+
+                separated_content = separate_markdown(prompt) # for Vision API
+                if len(separated_content) > 1:
+
+                    log(f"【MODEL】:{LLM_VISION_MODEL}")
+
+                    messages = [
+                        {
+                            "role": "user",
+                            "content": modify_parts_to_new_format_anthropic(separated_content)
+                        }
+                    ]
+
+                    # log("【MESSAGES】")
+                    # log(json.dumps(messages))
+
+                    response = anthropic_client.messages.create(
+                        model=LLM_VISION_MODEL,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                    )
+                else:
+
+                    log(f"【MODEL】:{model}")
+
+                    messages = [{"role": "user", "content": prompt}]
+                    response = anthropic_client.messages.create(
+                        model=model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                    )
+
+                log(f"【USAGE】input_tokens :{response.usage.input_tokens}")
+                log(f"【USAGE】output_tokens :{response.usage.output_tokens}")
+
+                return response.content[0].text.strip()
             else:
                 # Use 8000 instead of the real limit (8194) to give a bit of wiggle room for the encoding of roles.
                 # TODO: different limits for different models.
 
                 #trimmed_prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
 
-                client = OpenAI()
+                openai_client = OpenAI(
+                    api_key=OPENAI_API_KEY,  # this is also the default, it can be omitted
+                )
 
                 separated_content = separate_markdown(prompt) # for Vision API
                 if len(separated_content) > 1:
@@ -541,14 +687,14 @@ def openai_call(
                     messages = [
                         {
                             "role": "system",
-                            "content": modify_parts_to_new_format(separated_content)
+                            "content": modify_parts_to_new_format_openai(separated_content)
                         }
                     ]
 
                     # log("【MESSAGES】")
                     # log(json.dumps(messages))
 
-                    response = client.chat.completions.create(
+                    response = openai_client.chat.completions.create(
                         model=LLM_VISION_MODEL,
                         messages=messages,
                         temperature=temperature,
@@ -561,7 +707,7 @@ def openai_call(
                     log(f"【MODEL】:{model}")
 
                     messages = [{"role": "system", "content": prompt}]
-                    response = client.chat.completions.create(
+                    response = openai_client.chat.completions.create(
                         model=model,
                         messages=messages,
                         temperature=temperature,
@@ -571,6 +717,7 @@ def openai_call(
                     )
 
                 return response.choices[0].message.content.strip()
+        # OpenAI
         except openai.RateLimitError as e:
             log(
                 f"   *** The OpenAI API rate limit has been exceeded. Waiting 300 seconds and trying again. error: {str(e)} ***"
@@ -599,6 +746,22 @@ def openai_call(
         except openai.InternalServerError as e:
             log(
                 f"   *** OpenAI API InternalServerError. error: {str(e)} ***"
+            )
+            raise e
+        # Anthropic
+        except anthropic.RateLimitError as e:
+            log(
+                f"   *** The Anthropic API rate limit has been exceeded. Waiting 300 seconds and trying again. error: {str(e)} ***"
+            )
+            time.sleep(300)  # Wait seconds and try again
+        except anthropic.APIConnectionError as e:
+            log(
+                f"   *** Anthropic API connection error occurred. error: {str(e)} ***"
+            )
+            raise e
+        except anthropic.APIStatusError as e:
+            log(
+                f"   *** Anthropic API status error occurred. error: {str(e)} ***"
             )
             raise e
         except Exception as e:
@@ -982,7 +1145,7 @@ If the output is anything other than "Complete", please never output anything ot
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    responseString = openai_call(prompt)
+    responseString = llm_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         responseString + "\n\n")
     if responseString.startswith("Complete"):
@@ -1309,7 +1472,7 @@ Please never output the 'sudo' command. Please never output anything other than 
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    responseString = openai_call(prompt)
+    responseString = llm_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         responseString + "\n\n")
     try:
@@ -1582,7 +1745,7 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
     log("\n\n")
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    result = openai_call(prompt)
+    result = llm_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         result + "\n\n")
     return result
@@ -1627,7 +1790,7 @@ Always output only the merged code and never start the output with ```."""
     log("\n\n")
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    result = openai_call(prompt)
+    result = llm_call(prompt)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         result + "\n\n")
 
@@ -2008,3 +2171,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

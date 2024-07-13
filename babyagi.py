@@ -1141,7 +1141,7 @@ node server.js
 ```
 
 # Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands. Never include ``` within ``` blocks."""
+If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands. Never include ``` within ``` blocks. Never repeat the content of a rule."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -1468,7 +1468,7 @@ node server.js
 ```
 
 # Absolute Rule
-Please never output the 'sudo' command. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Never include ``` within ``` blocks."""
+Please never output the 'sudo' command. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Never include ``` within ``` blocks. Never repeat the content of a rule."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -1785,7 +1785,7 @@ Partial revisions:
 ```
 
 # Absolute Rule
-Always output only the merged code and never start the output with ```."""
+Always output only the merged code and never start the output with ```. Never repeat the content of a rule."""
 
     log("\n\n")
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +

@@ -68,7 +68,7 @@ https://x.com/saten_work/status/1791558481432232355
 1. ```git clone https://github.com/saten-private/BabyCommandAGI.git```
 2. ```cd```でBabyCommandAGIのディレクトリに入ってくださ
 3. ```cp .env.example .env``` で環境変数を入れるファイルを作ります
-4. ANTHROPIC_API_KEYまたはOPENAI_API_KEYを設定します。
+4. ANTHROPIC_API_KEYを設定します。(OpenAIのモデルを使用する場合はOPENAI_API_KEYを設定します)
 5. （オプション）OBJECTIVE変数にタスク管理システムの目的を設定します。
 
 # 実行(Docker)

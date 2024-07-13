@@ -68,7 +68,7 @@ Please follow the steps below:
 1. ```git clone https://github.com/saten-private/BabyCommandAGI.git```
 2. Enter the BabyCommandAGI directory with ```cd```.
 3. Create a file to insert environment variables with ```cp .env.example .env```.
-4. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.
+4. Set ANTHROPIC_API_KEY. (If you use OpenAI models, set OPENAI_API_KEY)
 5. (Optional) Set the objective of the task management system to the OBJECTIVE variable.
 
 # Execution (Docker)

@@ -791,11 +791,11 @@ input_thread.start()
 def check_completion_agent(
         objective: str, enriched_result: dict, task_list: deque, executed_task_list: deque, current_dir: str
 ):
-    prompt = f"""You are a best engineer that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
+    prompt = f"""You are the best engineer and manage the tasks to achieve the "{objective}". 
 
-If the objective is achieved based on the results, output only the string "Complete" instead of a "Example X of tasks output" format. In that case, never output anything other than "Complete".
+Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
 
-If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output them as a format following the "Example X of tasks output" below. Please never output anything other than a "Example X of tasks output" format.
+Follow the format in "Example X of tasks output" below to output next tasks. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
 
 Below is the result of the last execution."""
 
@@ -1140,8 +1140,8 @@ path: /workspace/flappy-bird-assets/
 node server.js
 ```
 
-# Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands. Never include ``` within ``` blocks."""
+# Next tasks output
+"""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -1162,10 +1162,7 @@ def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str):
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a best engineer.
-Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output in the format of "Example X of tasks output" that always includes "type:" before ``` blocks. Never include ``` within ``` blocks.
-
-# OBJECTIVE
-{objective}
+To achieve this "{objective}" for the following execution results, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output next tasks in the format of "Example X of tasks output" that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
 
 # Task to be performed.
 {task}
@@ -1467,8 +1464,8 @@ path: /workspace/flappy-bird-assets/
 node server.js
 ```
 
-# Absolute Rule
-Please never output the 'sudo' command. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Never include ``` within ``` blocks."""
+# Next tasks output
+"""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
@@ -1772,33 +1769,38 @@ def write_file(file_path: str, content: str):
 def merge_file(base_content: str, modify_content: str) -> str:
     
     prompt = f"""You are the best engineer.
-Please merge the following partial revisions into the base code.
+Please merge the following code modifications into the base code.
 
 Base code:
 ```
 {base_content}
 ```
 
-Partial revisions:
+Code modifications:
 ```
 {modify_content}
 ```
 
-# Absolute Rule
-Always output only the merged code and never start the output with ```."""
+The merged code:
+"""
 
     log("\n\n")
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    result = llm_call(prompt)
+    result = llm_call(prompt).strip()
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         result + "\n\n")
 
-    if result.startswith("```"):
-        log("Invalid output for merge:")
-        log("\nRetry\n\n")
-        return merge_file(base_content, modify_content)
-    
+    if "```" in result:
+        result = result.split("```")[1]
+        if "\n" in result:
+            result_lines = result.split("\n")[1:] # Delete up to the first line break.
+            result = "\n".join(result_lines).strip()
+        else:
+            log("merge parse error")
+            log("\nRetry\n\n")
+            return merge_file(base_content, modify_content)
+
     return result
 
 def user_feedback() -> str:
@@ -1876,9 +1878,7 @@ def execute_objective():
                 is_complete = False
                 while True:
 
-                    if task['type'].startswith("create") or task['type'].startswith("modify"):
-                        log("\033[33m\033[1m" + "*****CREATE TASK*****\n\n" + "\033[0m\033[0m")
-
+                    if task['type'].startswith("create") or task['type'].startswith("modify") or task['type'].startswith("modify_partial"):
                         path = task['path']
                         content = task['content']
 
@@ -1886,128 +1886,129 @@ def execute_objective():
                         if path.endswith(".sh"):
                             content = content.replace(" || true", "")
 
+                        log("task['type']: " + task['type'] + "\n\n")
                         log("path: " + path + "\n\n")
                         log(content + "\n\n")
 
-                        # If it starts with a comment, make it invalid content since it is often a differential update, etc.
-                        if check_first_two_lines_same_comment_style(content):
+                        has_rest_code = False
+                        contents = content.split("\n")
+                        for line in contents:
+                            line = line.strip()
+                            if line.startswith("//"):
+                                if " rest " in line.lower() or " existing " in line.lower():
+                                    has_rest_code = True
+                        if task['type'].startswith("modify_partial") or has_rest_code:
+                            log("\033[33m\033[1m" + "*****MODIFY TASK*****\n\n" + "\033[0m\033[0m")
 
-                            log("*INVALID CONTENT*")
+                            try:
+                                with open(path, 'r', encoding='utf-8') as file:
+                                    base_content = file.read()
 
-                            # Step 2: Enrich result and store
-                            save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+                                    new_content = merge_file(base_content, content)
 
-                            enriched_result = {
-                                "type": "fail_save_for_invalide_content",
-                                "target": path,
-                                "result": content
-                                }
-                            executed_tasks_storage.appendleft(enriched_result)
-                            save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                            break
+                                    write_file(path, new_content)
 
-                        try:
-                            write_file(path, content)
-                        except Exception as e:
-                            log(
-                                f"   *** Other error occurred: {str(e)} ***"
-                            )
-                            raise e
+                                    # Step 2: Enrich result and store
+                                    save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
-
-                        # Step 2: Enrich result and store
-                        save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
-
-                        enriched_result = {
-                            "type": "entire_file_after_writing",
-                            "target": path,
-                            "result": content
-                            }
-                        # TODO: Check Results. Try to disable the process of removing duplicate write execution results
-                        # executed_tasks_storage.remove_target_write_dicts(path)
-                        executed_tasks_storage.appendleft(enriched_result)
-                        save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                                
-                        # Keep only the most recent 30 tasks
-                        # if len(executed_tasks_storage.get_tasks()) > 30:
-                        #     executed_tasks_storage.pop()
-                            
-                        if tasks_storage.is_empty():
-                            break
-                        else:
-                            next_task = tasks_storage.reference(0)
-                            if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("modify_partial") or next_task['type'].startswith("command"):
-                                task = tasks_storage.popleft()
-                            else:
-                                is_next_plan = True
-                                break
-
-                    elif task['type'].startswith("modify_partial"):
-                        log("\033[33m\033[1m" + "*****MODIFY TASK*****\n\n" + "\033[0m\033[0m")
-
-                        path = task['path']
-                        content = task['content']
-
-                        # Ensure that results are not ignored.
-                        if path.endswith(".sh"):
-                            content = content.replace(" || true", "")
-
-                        log("path: " + path + "\n\n")
-                        log(content + "\n\n")
-
-                        try:
-                            with open(path, 'r', encoding='utf-8') as file:
-                                base_content = file.read()
-
-                                new_content = merge_file(base_content, content)
-
-                                write_file(path, new_content)
+                                    enriched_result = {
+                                        "type": "entire_file_after_writing",
+                                        "target": path,
+                                        "result": new_content
+                                        }
+                                    # TODO: Check Results. Try to disable the process of removing duplicate write execution results
+                                    # executed_tasks_storage.remove_target_write_dicts(path)
+                                    executed_tasks_storage.appendleft(enriched_result)
+                                    save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                                            
+                                    # Keep only the most recent 30 tasks
+                                    # if len(executed_tasks_storage.get_tasks()) > 30:
+                                    #     executed_tasks_storage.pop()
+                                        
+                                    if tasks_storage.is_empty():
+                                        break
+                                    else:
+                                        next_task = tasks_storage.reference(0)
+                                        if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("modify_partial") or next_task['type'].startswith("command"):
+                                            task = tasks_storage.popleft()
+                                        else:
+                                            is_next_plan = True
+                                            break                            
+                            except FileNotFoundError:
+                                log("*MODIFY PATH FILE NOTHING*")
 
                                 # Step 2: Enrich result and store
                                 save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                                 enriched_result = {
-                                    "type": "entire_file_after_writing",
+                                    "type": "fail_modify_partial_due_to_no_file",
                                     "target": path,
-                                    "result": new_content
+                                    "result": content
                                     }
-                                # TODO: Check Results. Try to disable the process of removing duplicate write execution results
-                                # executed_tasks_storage.remove_target_write_dicts(path)
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                                        
-                                # Keep only the most recent 30 tasks
-                                # if len(executed_tasks_storage.get_tasks()) > 30:
-                                #     executed_tasks_storage.pop()
-                                    
-                                if tasks_storage.is_empty():
-                                    break
-                                else:
-                                    next_task = tasks_storage.reference(0)
-                                    if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("modify_partial") or next_task['type'].startswith("command"):
-                                        task = tasks_storage.popleft()
-                                    else:
-                                        is_next_plan = True
-                                        break                            
-                        except FileNotFoundError:
-                            log("*MODIFY PATH FILE NOTHING*")
+                                break
+                            except Exception as e:
+                                log(
+                                    f"   *** Other error occurred: {str(e)} ***"
+                                )
+                                raise e
+
+                        else:
+                            log("\033[33m\033[1m" + "*****CREATE TASK*****\n\n" + "\033[0m\033[0m")
+
+                            # If it starts with a comment, make it invalid content since it is often a differential update, etc.
+                            if check_first_two_lines_same_comment_style(content):
+
+                                log("*INVALID CONTENT*")
+
+                                # Step 2: Enrich result and store
+                                save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
+
+                                enriched_result = {
+                                    "type": "fail_save_for_invalide_content",
+                                    "target": path,
+                                    "result": content
+                                    }
+                                executed_tasks_storage.appendleft(enriched_result)
+                                save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
+                                break
+
+                            try:
+                                write_file(path, content)
+                            except Exception as e:
+                                log(
+                                    f"   *** Other error occurred: {str(e)} ***"
+                                )
+                                raise e
+
 
                             # Step 2: Enrich result and store
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                             enriched_result = {
-                                "type": "fail_modify_partial_due_to_no_file",
+                                "type": "entire_file_after_writing",
                                 "target": path,
                                 "result": content
                                 }
+                            # TODO: Check Results. Try to disable the process of removing duplicate write execution results
+                            # executed_tasks_storage.remove_target_write_dicts(path)
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                            break
-                        except Exception as e:
-                            log(
-                                f"   *** Other error occurred: {str(e)} ***"
-                            )
-                            raise e
+                                    
+                            # Keep only the most recent 30 tasks
+                            # if len(executed_tasks_storage.get_tasks()) > 30:
+                            #     executed_tasks_storage.pop()
+                                
+                            if tasks_storage.is_empty():
+                                break
+                            else:
+                                next_task = tasks_storage.reference(0)
+                                if next_task['type'].startswith("create") or next_task['type'].startswith("modify") or next_task['type'].startswith("modify_partial") or next_task['type'].startswith("command"):
+                                    task = tasks_storage.popleft()
+                                else:
+                                    is_next_plan = True
+                                    break
 
                     elif task['type'].startswith("command"):
 

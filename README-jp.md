@@ -75,13 +75,19 @@ https://x.com/saten_work/status/1791558481432232355
 
 前提条件として、docker と docker-compose がインストールされている必要があります。Docker desktop は最もシンプルなオプションです https://www.docker.com/products/docker-desktop/
 
-以下を実行してください。
+## 実行
 
 ```
 docker-compose up -d && docker attach babyagi
 ```
 
-**注意：Ctrl+Cで終了しても```./clean.sh```の実行やDocker Desktopなどでコンテナ停止しないと停止しなくなりました。ご注意ください。**
+## 停止
+
+```
+docker-compose stop
+```
+
+**注意：Ctrl+Cで終了しても```docker-compose stop```や```./clean.sh```を実行しない限り停止しません。ご注意ください。**
 
 **注意：目的を達成できず、ループし続けることがあります。AnthropicやOpenAIのAPIの使用料にご注意ください。**
 

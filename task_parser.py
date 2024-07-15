@@ -4,7 +4,15 @@ from collections import deque
 class TaskParser:
 
     def decode(self, input_string: str) -> List[dict]:
-        data = input_string.strip().split("type:")[1:]
+        input_string = input_string.strip()
+        if input_string.startswith("type:"):
+          # The "type:" at the beginning should be deleted because it will all be added later.
+          input_string = input_string[len("type:"):]
+          data = input_string.split("\ntype:")
+        else:
+          # Ignore the first part of the "\ntype:" division if it does not begin with "type:".
+          data = input_string.split("\ntype:")[1:]
+
         if len(data) == 0:
             raise ValueError("No valid items found")
         parsed_data = []

@@ -75,13 +75,19 @@ Please follow the steps below:
 
 As a prerequisite, docker and docker-compose must be installed. Docker desktop is the simplest option https://www.docker.com/products/docker-desktop/
 
-Please execute the following:
+## Run
 
 ```
 docker-compose up -d && docker attach babyagi
 ```
 
-**Note: Even if you exit with Ctrl+C, it will not stop unless you run ```./clean.sh``` or stop the container using Docker Desktop. Please be careful.**
+## Stop
+
+```
+docker-compose stop
+```
+
+**Note: Even if you exit with Ctrl+C, it will not stop unless you run ```docker-compose stop``` or ```./clean.sh```. Please be careful.**
 
 **Note: The agent might loop indefinitely if it cannot achieve its objective. Please be aware of the cost of Anthropic and OpenAI APIs usage.**
 

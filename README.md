@@ -48,17 +48,17 @@ https://x.com/saten_work/status/1791558481432232355
 This script works by executing the following continuous loop:
 
 1. pull the next task from the task list. (It starts with one plan task.)
-2. determine whether the task is a command task or a plan task
+2. determine whether the task is a command task or a planned task
 3. if it is a command task: 
     1. Execute the command. 
     2. If the Status Code of the command execution result is 0 (success):
         Go to 5.
     3. Otherwise (failure): 
-        Analyze the results of previous command executions with LLM and create a new task list according to the OBJECTIVE.
-4. for a plan task:
-    1. plan with LLM based on the plan task, the results of the previous execution and the OBJECTIVE, and create a new task list.
+        Analyze the history of command executions with LLM and create a new task list according to the OBJECTIVE.
+4. for plan tasks:
+    1. plan with LLM based on the plan task, the history of command executions and the OBJECTIVE, and create a new task list.
 5. If user feedback is generated:
-    1. plan and create a new task list in LLM based on the OBJECTIVE and results of previous execution while being aware of feedback.
+    1. plan and create a new task list in LLM based on the OBJECTIVE and  the history of command executions while being aware of feedback.
 
 ![Architecture](docs/Architecture.png)
 

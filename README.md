@@ -47,17 +47,18 @@ https://x.com/saten_work/status/1791558481432232355
 
 This script works by executing the following continuous loop:
 
-1. Retrieve the first task from the task list.
-2. Determine if that task is a command task or a planning task.
-3. If it's a command task:
-    1. Execute the command.
-    2. If the command execution result has a Status Code of 0 and no response:
-        Proceed to the next task.
-    3. Otherwise:
-        Analyze the result of the command execution with LLM, check if the objective is complete, and if not, create a new task list.
-4. If it's a planning task:
-    1. Execute the plan with LLM.
-    2. Analyze the executed plan with LLM and create a new task list.
+1. pull the next task from the task list. (It starts with one plan task.)
+2. determine whether the task is a command task or a plan task
+3. if it is a command task: 
+    1. Execute the command. 
+    2. If the Status Code of the command execution result is 0 (success):
+        Go to 5.
+    3. Otherwise (failure): 
+        Analyze the results of previous command executions with LLM and create a new task list according to the OBJECTIVE.
+4. for a plan task:
+    1. plan with LLM based on the plan task, the results of the previous execution and the OBJECTIVE, and create a new task list.
+5. If user feedback is generated:
+    1. plan and create a new task list in LLM based on the OBJECTIVE and results of previous execution while being aware of feedback.
 
 ![Architecture](docs/Architecture.png)
 
@@ -99,22 +100,24 @@ Changing the OBJECTIVE will clear the list of future tasks and OBJECTIVE feedbac
 
 ## Feedback to AI
 
-By entering "f", you can give user feedback to the AI. This allows you to provide feedback to the AI on information that may not be clear from the CLI, like a GUI.
+By entering "f", you can give the AI user feedback on the OBJECTIVE. This allows AI to feed back information that is not available from the CLI, such as the GUI.
 
-## Input while AI is executing a command
+## Answer while AI is executing a command
 
-Normally, you cannot respond with y or n to a command that AI is executing, but entering "c" will put you in a mode where you can respond.
+Normally, the AI cannot answer with a such as "y" or "n" to a command it is executing, but it will enter a mode where it can answer by entering "a".
+
+(By the way, if a shell command waits for a answer like “y” or “n” for more than 5 minutes and the LLM thinks it is appropriate to answer, the LLM will automatically answer like “y” or “n” based on its judgment of the situation at that time.)
 
 # Useful commands
 
-- ```. /clean.sh```
+- ```./clean.sh```
 
-```workspace```, resets the environment (container). Also ```. /new_store.sh``` also executes
-- ```. /backup_workspace.sh```
+```workspace```, resets the environment (container). Also ```./new_store.sh``` also executes
+- ```./backup_workspace.sh```
 
 Backup your ``workspace`` by creating a folder with the current time in ``workspace_backup``.
 (Note that environment (container) and BabyCommandAGI data will not be backed up.)
-- ```. /new_store.sh```
+- ```./new_store.sh```
 
 New BabyCommandAGI data (remembered information) will be created. Because of the switch to new data, BabyCommandAGI will not remember anything.
 

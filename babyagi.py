@@ -88,9 +88,9 @@ BABY_COMMAND_AGI_FOLDER = "/app"
 WORKSPACE_FOLDER = "/workspace"
 
 # Model: GPT, LLAMA, HUMAN, etc.
-LLM_MODEL = os.getenv("LLM_MODEL", os.getenv("OPENAI_API_MODEL", "gpt-4-1106-preview")).lower()
-LLM_VISION_MODEL = os.getenv("LLM_VISION_MODEL", os.getenv("OPENAI_API_VISION_MODEL", "gpt-4-vision-preview")).lower()
-TOKEN_COUNT_MODEL = os.getenv("TOKEN_COUNT_MODEL", "gpt-4-vision-preview").lower()
+LLM_MODEL = os.getenv("LLM_MODEL", "claude-3-5-sonnet-20240620").lower()
+LLM_VISION_MODEL = os.getenv("LLM_VISION_MODEL", "claude-3-5-sonnet-20240620").lower()
+TOKEN_COUNT_MODEL = os.getenv("TOKEN_COUNT_MODEL", "claude-3-5-sonnet-20240620").lower()
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -98,25 +98,27 @@ ANTHROPIC_API_KEY= os.getenv("ANTHROPIC_API_KEY", "")
 GOOGLE_AI_STUDIO_API_KEY =  os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
 
 if not (LLM_MODEL.startswith("llama") or LLM_MODEL.startswith("human")):
-    assert OPENAI_API_KEY, "\033[91m\033[1m" + "OPENAI_API_KEY environment variable is missing from .env" + "\033[0m\033[0m"
+    assert ANTHROPIC_API_KEY, "\033[91m\033[1m" + "ANTHROPIC_API_KEY environment variable is missing from .env" + "\033[0m\033[0m"
 
 # Table config
-RESULTS_STORE_NAME = os.getenv("RESULTS_STORE_NAME", os.getenv("TABLE_NAME", "")) + "-" + os.getenv("RESULTS_SOTRE_NUMBER", "")
+RESULTS_STORE_NAME = os.getenv("RESULTS_STORE_NAME", "no-name-table") + "-" + os.getenv("RESULTS_SOTRE_NUMBER", "0")
 assert RESULTS_STORE_NAME, "\033[91m\033[1m" + "RESULTS_STORE_NAME environment variable is missing from .env" + "\033[0m\033[0m"
 
 # Run configuration
-INSTANCE_NAME = os.getenv("INSTANCE_NAME", os.getenv("BABY_NAME", "BabyCommandAGI"))
+INSTANCE_NAME = os.getenv("INSTANCE_NAME", "BabyCommandAGI")
 COOPERATIVE_MODE = "none"
+
 # If LLM_COMMAND_RESPONSE is set to True, the LLM will automatically respond if there is a confirmation when executing a command, 
 # but be aware that this will increase the number of times the LLM is used and increase the cost of the API, etc.
 LLM_COMMAND_RESPONSE = True
 JOIN_EXISTING_OBJECTIVE = False
+
 MAX_MARGIN_TOKEN = 200 # Allow enough tokens to avoid being on the edge
 MAX_MODEL_OUTPUT_TOKEN = 4 * 1024 # default value
 MAX_MODEL_INPUT_TOKEN = 128 * 1024 # default value
 # Maximum number of tokens is confirmed below
 # https://context.ai/compare/gpt-4o/claude-3-5-sonnet
-MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 4 * 1024
+MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
 MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
 
 MAX_COMMAND_RESULT_TOKEN = 8 * 1024
@@ -124,7 +126,7 @@ MAX_DUPLICATE_COMMAND_RESULT_TOKEN = 1 * 1024
 
 # Goal configuration
 ORIGINAL_OBJECTIVE = os.getenv("OBJECTIVE", "")
-INITIAL_TASK = os.getenv("INITIAL_TASK", os.getenv("FIRST_TASK", ""))
+INITIAL_TASK = os.getenv("INITIAL_TASK", "")
 
 # Model configuration
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.0))
@@ -133,7 +135,7 @@ GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", 0.0))
 
 TEMPERATURE = OPENAI_TEMPERATURE # default value
 
-#Set Variables
+# Set Variables
 hash_object = hashlib.sha1(ORIGINAL_OBJECTIVE.encode())
 hex_dig = hash_object.hexdigest()
 objective_table_name = f"{hex_dig[:8]}-{RESULTS_STORE_NAME}"
@@ -188,7 +190,6 @@ def can_import(module_name):
         return False
 
 DOTENV_EXTENSIONS = os.getenv("DOTENV_EXTENSIONS", "").split(" ")
-
 
 # Command line arguments extension
 # Can override any of the above environment variables
@@ -265,33 +266,45 @@ if LLM_MODEL.startswith("llama"):
             + "\nLlama LLM requires package llama-cpp. Falling back to GPT-3.5-turbo."
             + "\033[0m\033[0m"
         )
-        LLM_MODEL = "gpt-4"
+        LLM_MODEL = "gpt-4o"
 
-if LLM_MODEL.startswith("gpt-4"):
+elif LLM_MODEL.startswith("gpt-4"):
     log(
         "\033[91m\033[1m"
         + "\n*****USING GPT-4. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
         + "\033[0m\033[0m"
     )
 
-if LLM_MODEL.startswith("claude-3-5-sonnet"):
+elif LLM_MODEL.startswith("claude-3-5-sonnet"):
     MAX_MODEL_OUTPUT_TOKEN = MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN
     MAX_MODEL_INPUT_TOKEN = MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN
     TEMPERATURE = ANTHROPIC_TEMPERATURE
 
-if LLM_MODEL.startswith("gemini"):
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING Claude 3.5. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
+
+elif LLM_MODEL.startswith("gemini"):
     TEMPERATURE = GEMINI_TEMPERATURE
 
-if LLM_MODEL.startswith("human"):
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING Gemini. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
+
+elif LLM_MODEL.startswith("human"):
     log(
         "\033[91m\033[1m"
         + "\n*****USING HUMAN INPUT*****"
         + "\033[0m\033[0m"
     )
 
+# Max token initialization
 MAX_OUTPUT_TOKEN = MAX_MODEL_OUTPUT_TOKEN
 MAX_INPUT_TOKEN = MAX_MODEL_INPUT_TOKEN - MAX_OUTPUT_TOKEN - MAX_MARGIN_TOKEN # default value
-
 
 log(
     "\033[91m\033[1m"
@@ -302,13 +315,9 @@ log(
 log("\033[94m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
 log(f"{OBJECTIVE}")
 
-# Configure OpenAI
-anthropic_client = Anthropic(
-    api_key=ANTHROPIC_API_KEY
-)
-openai_client = OpenAI(
-  api_key=OPENAI_API_KEY,  # this is also the default, it can be omitted
-)
+# Configure client
+anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 genai.configure(api_key=GOOGLE_AI_STUDIO_API_KEY)
 
 # Task storage supporting only a single instance of BabyAGI
@@ -381,13 +390,13 @@ class SingleTaskListStorage:
             try:
                 encoding = tiktoken.encoding_for_model(TOKEN_COUNT_MODEL)
             except:
-                encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+                encoding = tiktoken.encoding_for_model('gpt-4o')  # Fallback for others.
             encoded = encoding.encode(string)
             return MAX_DUPLICATE_COMMAND_RESULT_TOKEN <= len(encoded)
 
 # Task list
-temp_task_list = load_data(TASK_LIST_FILE) #deque([])
-temp_executed_task_list = load_data(EXECUTED_TASK_LIST_FILE) #deque([])
+temp_task_list = load_data(TASK_LIST_FILE)
+temp_executed_task_list = load_data(EXECUTED_TASK_LIST_FILE)
 
 # Initialize tasks storage
 tasks_storage = SingleTaskListStorage(temp_task_list)
@@ -433,7 +442,7 @@ def limit_tokens_from_string(string: str, model: str, limit: int) -> str:
         try:
             encoding = tiktoken.encoding_for_model(model)
         except:
-            encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+            encoding = tiktoken.encoding_for_model('gpt-4o')  # Fallback for others.
 
     encoded = encoding.encode(string)
 
@@ -527,19 +536,31 @@ def modify_parts_to_new_format_anthropic(parts):
         if isinstance(part, str):  # Text part
             new_format_parts.append({"type": "text", "text": part})
         elif isinstance(part, dict):
-            if 'url' in part:  # Image with URL
+            if 'url' in part: # Image with URL
                 raise Exception("Image with URL is not supported in Anthropic API")
             elif 'path' in part:  # Local image file
+                # Determine media type based on file extension
+                extension = part['path'].split('.')[-1].lower()
+                if extension in ['jpg', 'jpeg']:
+                    media_type = 'image/jpeg'
+                elif extension == 'png':
+                    media_type = 'image/png'
+                elif extension == 'gif':
+                    media_type = 'image/gif'
+                elif extension == 'webp':
+                    media_type = 'image/webp'
+                else:
+                    media_type = 'application/octet-stream'  # Default media type
                 base64_image = encode_image(part['path'])
+
                 new_format_parts.append({
                     "type": "image",
                     "source": {
                         "type": "base64",
-                        "media_type": "image/jpeg",
+                        "media_type": media_type,
                         "data": base64_image
                     }
                 })
-
     return new_format_parts
 
 def modify_parts_to_new_format_openai(parts):
@@ -561,9 +582,19 @@ def modify_parts_to_new_format_openai(parts):
             if 'url' in part:  # Image with URL
                 new_format_parts.append({"type": "image_url", "image_url": {"url": part['url']}})
             elif 'path' in part:  # Local image file
+                extension = part['path'].split('.')[-1].lower()
+                if extension in ['jpg', 'jpeg']:
+                    media_type = 'image/jpeg'
+                elif extension == 'png':
+                    media_type = 'image/png'
+                elif extension == 'gif':
+                    media_type = 'image/gif'
+                elif extension == 'webp':
+                    media_type = 'image/webp'
+                else:
+                    media_type = 'application/octet-stream'  # Default media type
                 base64_image = encode_image(part['path'])
-                new_format_parts.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}})
-
+                new_format_parts.append({"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{base64_image}"}})
     return new_format_parts
 
 def llm_call(
@@ -628,7 +659,6 @@ def llm_call(
 
                 return response.text.strip()
             elif model.lower().startswith("claude"):
-                log(f"【MODEL】:{model}")
 
                 anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
@@ -670,14 +700,8 @@ def llm_call(
 
                 return response.content[0].text.strip()
             else:
-                # Use 8000 instead of the real limit (8194) to give a bit of wiggle room for the encoding of roles.
-                # TODO: different limits for different models.
 
-                #trimmed_prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
-
-                openai_client = OpenAI(
-                    api_key=OPENAI_API_KEY,  # this is also the default, it can be omitted
-                )
+                openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
                 separated_content = separate_markdown(prompt) # for Vision API
                 if len(separated_content) > 1:
@@ -777,11 +801,11 @@ def check_input():
     global input_flag
     while True:
         time.sleep(2)
-        if input_flag == "f" or input_flag == "c":
+        if input_flag == "f" or input_flag == "a":
             continue
-        log("\n" + "\033[33m\033[1m" + 'The state has been set so that if you input "f", it will go to feedback.' + "\033[0m\033[0m" + "\n")
+        log("\n" + "\033[33m\033[1m" + 'The system now accepts "f" if you want to send feedback to the AI, or "a" if you want to send the answer to the shell.' + "\033[0m\033[0m" + "\n")
         inp = input()
-        if inp == "f" or inp == "c":
+        if inp == "f" or inp == "a":
             input_flag = inp
 
 # Thread for non-blocking input check
@@ -793,9 +817,9 @@ def check_completion_agent(
 ):
     prompt = f"""You are the best engineer and manage the tasks to achieve the "{objective}". 
 
-Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
+Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate "plan" tasks with reduced granularity.
 
-Follow the format in "Example X of tasks output" below to output next tasks. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
+Follow the format in "Examples of tasks output" below to output next tasks. Please never output anything other than a "Examples of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
 
 Below is the result of the last execution."""
 
@@ -803,38 +827,46 @@ Below is the result of the last execution."""
         prompt += f"""
         
 # Path where the file was written
+
 {enriched_result["target"]}
 
-# Content written to file
+# Entire contents of the written file
+
 {enriched_result["result"]}"""
         
-    elif enriched_result["type"].startswith("fail_save_for_invalide_content"):
+    elif enriched_result["type"].startswith("failed_to_save_due_to_invalid_content"):
         prompt += f"""
         
 # Pass that I tried to save but failed.
+
 {enriched_result["target"]}
 
-# Invalid content that fails to save
+# Invalid content that failed to save
+
 ```
 {enriched_result["result"]}
 ```"""
         
-    elif enriched_result["type"].startswith("fail_modify_partial_due_to_no_file"):
+    elif enriched_result["type"].startswith("failed_modify_partial_due_to_no_file"):
         prompt += f"""
         
 # Failed to make modifications because the file was missing.
+
 path: {enriched_result["target"]}"""
         
     elif enriched_result["type"].startswith("command"):
         prompt += f"""
 
 # Current directory
+
 {current_dir}
 
 # Command executed most recently
+
 {enriched_result["target"]}
 
 # Result of last command executed
+
 {enriched_result["result"]}"""
         
     if len(executed_task_list) > 1:
@@ -843,33 +875,41 @@ path: {enriched_result["target"]}"""
         prompt += f"""
         
 # The list of results executed most recently after that.
+
 {ExecutedTaskParser().encode(after_executed_task_list)}"""
 
     prompt += f"""
 
 # Uncompleted tasks
+
 {TaskParser().encode(task_list)}"""
 
     prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
-# Example 1 of tasks output
+# Examples of tasks output
+
+## Implementation of Minesweeper
+
 type: create
 path: /workspace/requirements.txt
 ```
 dataclasses
 ```
+
 type: command
 path: /workspace/
 ```bash
 pip install -r requirements.txt
 source venv/bin/activate
 ```
+
 type: plan
 ```
 Designing a Minesweeper.
 ```
+
 type: create
 path: /workspace/minesweeper.py
 ```python
@@ -893,6 +933,7 @@ class Minesweeper:
         self.display_board()
         print("Game Over!")
 ```
+
 type: modify_partial
 path: /workspace/minesweeper.py
 ```python
@@ -907,6 +948,7 @@ class Minesweeper:
 
         # ... Rest of the code remains unchanged ...
 ```
+
 type: modify_partial
 path: /workspace/minesweeper.py
 ```python
@@ -920,19 +962,22 @@ path: /workspace/minesweeper.py
 +#     self.board.flag_cell(row, col)
 ```
 
-# Example 2 of tasks output
+## Obtaining weather forecasts
+
 type: command
 path: /workspace/
 ```
 pip install curl
 ```
+
 type: command
 path: /workspace/
 ```
 curl -s https://wttr.in/Tokyo
 ```
 
-# Example 3 of tasks output
+## Implementation of Flappy Bird
+
 type: command
 path: /workspace/
 ```
@@ -941,12 +986,14 @@ apt-get install -y git
 apt-get install -y npm
 git clone https://github.com/samuelcust/flappy-bird-assets.git
 ```
+
 type: command
 path: /workspace/flappy-bird-assets/
 ```
 npm init -y
 npm install express
 ```
+
 type: create
 path: /workspace/flappy-bird-assets/server.js
 ```
@@ -961,6 +1008,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Flappy Bird game running at http://0.0.0.0:${PORT}/`);
 });
 ```
+
 type: create
 path: /workspace/flappy-bird-assets/index.html
 ```
@@ -977,6 +1025,7 @@ path: /workspace/flappy-bird-assets/index.html
 </body>
 </html>
 ```
+
 type: create
 path: /workspace/flappy-bird-assets/flappy-bird.js
 ```
@@ -1134,6 +1183,7 @@ class Pipe {
   }
 }
 ```
+
 type: command
 path: /workspace/flappy-bird-assets/
 ```
@@ -1141,6 +1191,7 @@ node server.js
 ```
 
 # Next tasks output
+
 """
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
@@ -1162,37 +1213,46 @@ def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str):
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a best engineer.
-To achieve this "{objective}" for the following execution results, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output next tasks in the format of "Example X of tasks output" that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
+To achieve the "{objective}" from the following executed result states, before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output next tasks in the format of "Examples of tasks output" that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
 
 # Task to be performed.
+
 {task}
 
 # Current directory
+
 {current_dir}
 
 # List of most recently executed results
+
 {ExecutedTaskParser().encode(executed_task_list)}"""
     
     prompt = limit_tokens_from_string(prompt, TOKEN_COUNT_MODEL, MAX_INPUT_TOKEN)
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
-# Example 1 of tasks output
+# Examples of tasks output
+
+## Implementation of Minesweeper
+
 type: create
 path: /workspace/requirements.txt
 ```
 dataclasses
 ```
+
 type: command
 path: /workspace/
 ```bash
 pip install -r requirements.txt
 source venv/bin/activate
 ```
+
 type: plan
 ```
 Designing a Minesweeper.
 ```
+
 type: create
 path: /workspace/minesweeper.py
 ```python
@@ -1216,6 +1276,7 @@ class Minesweeper:
         self.display_board()
         print("Game Over!")
 ```
+
 type: modify_partial
 path: /workspace/minesweeper.py
 ```python
@@ -1230,33 +1291,36 @@ class Minesweeper:
 
         # ... Rest of the code remains unchanged ...
 ```
+
 type: modify_partial
 path: /workspace/minesweeper.py
 ```python
-# if action == "r":
-#     game_over = self.board.reveal_cell(row, col)
-# elif action == "f":
-#     self.board.flag_cell(row, col)
-
-if action == "R":
-    game_over = self.board.reveal_cell(row, col)
-elif action == "F":
-    self.board.flag_cell(row, col)
+- if action == "R":
+-     game_over = self.board.reveal_cell(row, col)
+- elif action == "F":
+-     self.board.flag_cell(row, col)
++# if action == "r":
++#     game_over = self.board.reveal_cell(row, col)
++# elif action == "f":
++#     self.board.flag_cell(row, col)
 ```
 
-# Example 2 of tasks output
+## Obtaining weather forecasts
+
 type: command
 path: /workspace/
 ```
 pip install curl
 ```
+
 type: command
 path: /workspace/
 ```
 curl -s https://wttr.in/Tokyo
 ```
 
-# Example 3 of tasks output
+## Implementation of Flappy Bird
+
 type: command
 path: /workspace/
 ```
@@ -1265,12 +1329,14 @@ apt-get install -y git
 apt-get install -y npm
 git clone https://github.com/samuelcust/flappy-bird-assets.git
 ```
+
 type: command
 path: /workspace/flappy-bird-assets/
 ```
 npm init -y
 npm install express
 ```
+
 type: create
 path: /workspace/flappy-bird-assets/server.js
 ```
@@ -1285,6 +1351,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Flappy Bird game running at http://0.0.0.0:${PORT}/`);
 });
 ```
+
 type: create
 path: /workspace/flappy-bird-assets/index.html
 ```
@@ -1301,6 +1368,7 @@ path: /workspace/flappy-bird-assets/index.html
 </body>
 </html>
 ```
+
 type: create
 path: /workspace/flappy-bird-assets/flappy-bird.js
 ```
@@ -1458,6 +1526,7 @@ class Pipe {
   }
 }
 ```
+
 type: command
 path: /workspace/flappy-bird-assets/
 ```
@@ -1465,6 +1534,7 @@ node server.js
 ```
 
 # Next tasks output
+
 """
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
@@ -1488,7 +1558,6 @@ def list_std_blocks(target_list: list) -> list[str]:
             buffer = bytes()
             while True:
                 try:
-                    # Try to decode the entire buffer
                     chunk = os.read(read, 1024)
                 except:
                     is_target_list_break = True
@@ -1531,7 +1600,7 @@ def list_std_blocks(target_list: list) -> list[str]:
 
     return std_blocks
 
-# Execute a task based on the objective and five previous tasks
+# Execute a command
 def execution_command(objective: str, command: str, task_list: deque,
                       executed_task_list: deque, current_dir: str) -> str:
     global pty_master
@@ -1549,7 +1618,7 @@ def execution_command(objective: str, command: str, task_list: deque,
     #for key, value in os.environ.items():
     #    log(f"{key}: {value}")
 
-    # After the subprocess completes, read the dumped environment variables
+    # Read the dumped environment variables
     if os.path.isfile(ENV_DUMP_FILE):
         with open(ENV_DUMP_FILE, "r") as env_file:
             for line in env_file:
@@ -1603,9 +1672,9 @@ def execution_command(objective: str, command: str, task_list: deque,
                     wait_input = False
                 else:
                     if wait_input:
-                        print("\n" + "\033[33m\033[1m" + 'Force termination of the process. Please enter "c".' + "\033[0m\033[0m" + "\n")
+                        print("\n" + "\033[33m\033[1m" + 'Enter "f" if you want to send feedback to the AI or "a" if you want to send the answer to the shell.' + "\033[0m\033[0m" + "\n")
                     else:
-                        print("\n" + "\033[33m\033[1m" + '"f": go to "feedback". Since the process is running, you can respond by typing "c".' + "\033[0m\033[0m" + "\n")
+                        print("\n" + "\033[33m\033[1m" + 'Enter "f" if you want to send feedback to the AI or "a" if you want to send the answer to the shell.' + "\033[0m\033[0m" + "\n")
             
             # Check for output with a timeout of some minutes
             rlist, wlist, xlist = select.select([pty_master], [], [], 2)
@@ -1622,7 +1691,7 @@ def execution_command(objective: str, command: str, task_list: deque,
                         # Concatenate the output and split it by lines
                         stdout_lines = "".join(std_blocks).splitlines()
 
-                        # No output received within 5 seconds, call the check_wating_for_response function with the last 3 lines or the entire content
+                        # No output received within 5 miniutes, call the check_wating_for_response function with the last 3 lines or the entire content
                         lastlines = stdout_lines[-3:] if len(stdout_lines) >= 3 else stdout_lines
                         lastlines = "\n".join(lastlines)
                         llm_command_response = llm_command_response_for_waiting(objective, lastlines, command,
@@ -1645,12 +1714,12 @@ def execution_command(objective: str, command: str, task_list: deque,
                 if input_flag is None:
                     if wait_input == False:
                         wait_input = True
-                        log("\n" + "\033[33m\033[1m" + 'Force termination of the process. Please enter "c".' + "\033[0m\033[0m" + "\n")
+                        log("\n" + "\033[33m\033[1m" + 'Enter "f" if you want to send feedback to the AI or "a" if you want to send the answer to the shell.' + "\033[0m\033[0m" + "\n")
                     continue
 
                 if end_prcessing:
                     continue
-                log("\n" + "\033[33m\033[1m" + 'Force termination of the process. If the process requires a response such as termination, enter the response. If it is not necessary, leave it empty and press [Enter].' + "\033[0m\033[0m" + "\n")
+                log("\n" + "\033[33m\033[1m" + 'Enter your answer to the shell to end the process before sending feedback to the AI. If you do not need the answer to the shell, leave it empty and type [Enter].' + "\033[0m\033[0m" + "\n")
                 response = input()
                 if response == "":
                     break
@@ -1660,11 +1729,11 @@ def execution_command(objective: str, command: str, task_list: deque,
                 notification_time = time.time()
                 start_time = time.time()
 
-                if input_flag == "c":
+                if input_flag == "a":
                     input_flag = None
 
-            elif input_flag == "c":
-                log("\n" + "\033[33m\033[1m" + 'Please enter your response.' + "\033[0m\033[0m" + "\n")
+            elif input_flag == "a":
+                log("\n" + "\033[33m\033[1m" + 'Enter your answer to the shell.' + "\033[0m\033[0m" + "\n")
                 response = input()
                 response += '\n'
                 os.write(pty_master, response.encode())
@@ -1694,7 +1763,7 @@ def execution_command(objective: str, command: str, task_list: deque,
         pty_master = None
         process.terminate()
         process.wait()
-        if input_flag == "c":
+        if input_flag == "a":
             input_flag = None
 
     
@@ -1749,12 +1818,12 @@ In cases other than the above: 'BabyCommandAGI: Continue'"""
 
 def analyze_command_result(result: str) -> str:
     lastString = last_tokens_from_string(result, TOKEN_COUNT_MODEL, MAX_COMMAND_RESULT_TOKEN)
-    result_lines = lastString.split('\n')[-100:]  # Extract the last 30 lines
+    result_lines = lastString.split('\n')[-100:]  # Extract the last many lines
     for idx, line in enumerate(result_lines):
         if "fail" in line.lower() or "error" in line.lower():
             start_idx = max(0, idx - 10)  # Start from 10 lines before the "failure" line
             return '\n'.join(result_lines[start_idx:])  # Return all lines from the first match
-    return '\n'.join(result_lines)  # If no match, return the last 30 lines
+    return '\n'.join(result_lines)  # If no match, return the last many lines
 
 def write_file(file_path: str, content: str):
     try:
@@ -1817,6 +1886,8 @@ def user_feedback() -> str:
 
 def check_first_two_lines_same_comment_style(text):
     """
+    To detect if it starts with a comment because there are many differential updates, etc.
+    
     Extracts the first two lines from the given string and checks if both start with either '# ' or both start with '// '.
     If there's only one line, it checks if that line starts with '# ' or '// '.
 
@@ -1864,12 +1935,12 @@ def execute_objective():
         if len(tasks_storage.get_tasks()) == 0:
             break
         else:
-            # Step 1: Pull the first task
+            # Pull the first task
             task = tasks_storage.popleft()
             log("\033[92m\033[1m" + "*****NEXT TASK*****\n\n" + "\033[0m\033[0m")
             log(str(task['type']) + ": " + task['content'] + "\n\n")
 
-            # Check executable command
+            # Check executable content
             if task['type'].startswith("create") or task['type'].startswith("modify") or task['type'].startswith("modify_partial") or task['type'].startswith("command"):
 
                 enriched_result = {}
@@ -1891,13 +1962,13 @@ def execute_objective():
                         log(content + "\n\n")
 
                         has_rest_code = False
-                        contents = content.split("\n")
-                        for line in contents:
+                        content_lines = content.split("\n")
+                        for line in content_lines:
                             line = line.strip()
                             if line.startswith("//"):
                                 if " rest " in line.lower() or " existing " in line.lower():
                                     has_rest_code = True
-                        if task['type'].startswith("modify_partial") or has_rest_code:
+                        if task['type'].startswith("modify_partial") or has_rest_code or check_first_two_lines_same_comment_style(content):
                             log("\033[33m\033[1m" + "*****MODIFY TASK*****\n\n" + "\033[0m\033[0m")
 
                             try:
@@ -1908,7 +1979,7 @@ def execute_objective():
 
                                     write_file(path, new_content)
 
-                                    # Step 2: Enrich result and store
+                                    # Enrich result and store
                                     save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                                     enriched_result = {
@@ -1916,12 +1987,15 @@ def execute_objective():
                                         "target": path,
                                         "result": new_content
                                         }
-                                    # TODO: Check Results. Try to disable the process of removing duplicate write execution results
+                                    # TODO: Verification of execution results required. 
+                                    # It is possible that the deletion of duplicate writes may have caused post-write execution errors to incorrectly recognize the context and because the API now supports long contexts,
+                                    # try to disable the process of removing duplicate write execution results
                                     # executed_tasks_storage.remove_target_write_dicts(path)
+
                                     executed_tasks_storage.appendleft(enriched_result)
                                     save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                             
-                                    # Keep only the most recent 30 tasks
+                                    # API now supports long contexts, disable processing of the maximum value in the execution history
                                     # if len(executed_tasks_storage.get_tasks()) > 30:
                                     #     executed_tasks_storage.pop()
                                         
@@ -1937,11 +2011,11 @@ def execute_objective():
                             except FileNotFoundError:
                                 log("*MODIFY PATH FILE NOTHING*")
 
-                                # Step 2: Enrich result and store
+                                # Enrich result and store
                                 save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
 
                                 enriched_result = {
-                                    "type": "fail_modify_partial_due_to_no_file",
+                                    "type": "failed_modify_partial_due_to_no_file",
                                     "target": path,
                                     "result": content
                                     }
@@ -1957,23 +2031,6 @@ def execute_objective():
                         else:
                             log("\033[33m\033[1m" + "*****CREATE TASK*****\n\n" + "\033[0m\033[0m")
 
-                            # If it starts with a comment, make it invalid content since it is often a differential update, etc.
-                            if check_first_two_lines_same_comment_style(content):
-
-                                log("*INVALID CONTENT*")
-
-                                # Step 2: Enrich result and store
-                                save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
-
-                                enriched_result = {
-                                    "type": "fail_save_for_invalide_content",
-                                    "target": path,
-                                    "result": content
-                                    }
-                                executed_tasks_storage.appendleft(enriched_result)
-                                save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                                break
-
                             try:
                                 write_file(path, content)
                             except Exception as e:
@@ -1981,7 +2038,6 @@ def execute_objective():
                                     f"   *** Other error occurred: {str(e)} ***"
                                 )
                                 raise e
-
 
                             # Step 2: Enrich result and store
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
@@ -1991,12 +2047,16 @@ def execute_objective():
                                 "target": path,
                                 "result": content
                                 }
-                            # TODO: Check Results. Try to disable the process of removing duplicate write execution results
+                            
+                            # TODO: Verification of execution results required. 
+                            # It is possible that the deletion of duplicate writes may have caused post-write execution errors to incorrectly recognize the context and because the API now supports long contexts,
+                            # try to disable the process of removing duplicate write execution results
                             # executed_tasks_storage.remove_target_write_dicts(path)
+
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
                                     
-                            # Keep only the most recent 30 tasks
+                            # API now supports long contexts, disable processing of the maximum value in the execution history
                             # if len(executed_tasks_storage.get_tasks()) > 30:
                             #     executed_tasks_storage.pop()
                                 
@@ -2031,7 +2091,8 @@ def execute_objective():
 
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                                # Keep only the most recent 30 tasks
+
+                                # API now supports long contexts, disable processing of the maximum value in the execution history
                                 # if len(executed_tasks_storage.get_tasks()) > 30:
                                 #     executed_tasks_storage.pop()
 
@@ -2050,12 +2111,17 @@ def execute_objective():
                             command = command.replace("sudo ", "")
                             all_result = execution_command(OBJECTIVE, command, tasks_storage.get_tasks(),
                                             executed_tasks_storage.get_tasks(), current_dir)
-                            result = all_result #analyze_command_result(all_result)
+                            
+                            # TODO: Verification of execution results required. 
+                            # It is possible that the deletion of duplicate writes may have caused post-write execution errors to incorrectly recognize the context and because the API now supports long contexts,
+                            # stop partial extraction of command execution results.
+                            result = all_result # analyze_command_result(all_result)
+
                             if os.path.isfile(PWD_FILE):
                                 with open(PWD_FILE, "r") as pwd_file:
                                     current_dir = pwd_file.read().strip()
 
-                            # Step 2: Enrich result and store
+                            # Enrich result and store
                             task['content'] = "\n".join(list(commands))
                             tasks_storage.appendleft(task)
                             save_data(tasks_storage.get_tasks(), TASK_LIST_FILE)
@@ -2066,7 +2132,8 @@ def execute_objective():
                                 enriched_result['result'] = result #"Success"
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                                # Keep only the most recent 30 tasks
+
+                                # API now supports long contexts, disable processing of the maximum value in the execution history
                                 # if len(executed_tasks_storage.get_tasks()) > 30:
                                 #     executed_tasks_storage.pop()
 
@@ -2075,11 +2142,16 @@ def execute_objective():
 
                             if all_result.startswith("The Return Code for the command is 0:") is False:
                                 enriched_result['result'] = result
-                                # TODO: Check Results. Try to disable the process of removing duplicate command execution results
+
+                                # TODO: Verification of execution results required. 
+                                # By deleting duplicate command execution results, there is no history of execution errors and the possibility of not learning about errors in the field, and because the API context has become longer,
+                                # try to disable the process of removing duplicate command execution results
                                 # executed_tasks_storage.remove_target_command_dicts(current_dir, command, result)
+
                                 executed_tasks_storage.appendleft(enriched_result)
                                 save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                                # Keep only the most recent 30 tasks
+
+                                # API now supports long contexts, disable processing of the maximum value in the execution history
                                 # if len(executed_tasks_storage.get_tasks()) > 30:
                                 #     executed_tasks_storage.pop()
 
@@ -2089,7 +2161,8 @@ def execute_objective():
                             enriched_result['result'] = result #"Success"
                             executed_tasks_storage.appendleft(enriched_result)
                             save_data(executed_tasks_storage.get_tasks(), EXECUTED_TASK_LIST_FILE)
-                            # Keep only the most recent 30 tasks
+
+                            # API now supports long contexts, disable processing of the maximum value in the execution history
                             # if len(executed_tasks_storage.get_tasks()) > 30:
                             #     executed_tasks_storage.pop()
 
@@ -2120,7 +2193,7 @@ def execute_objective():
                     continue
 
 
-                # Step 3: Create new tasks and reprioritize task list
+                # Create new tasks and reprioritize task list
                 new_tasks_list = check_completion_agent(OBJECTIVE, enriched_result, tasks_storage.get_tasks(),
                                                         executed_tasks_storage.get_tasks(), current_dir)
                     
@@ -2131,7 +2204,6 @@ def execute_objective():
                 log("\033[33m\033[1m" + "*****PLAN TASK*****\n\n" + "\033[0m\033[0m")
                 new_tasks_list = plan_agent(OBJECTIVE, task['content'], executed_tasks_storage.get_tasks(), current_dir)
 
-                # Send to execution function to complete the task based on the context
                 log("\033[32m\033[1m" + "*****TASK RESULT*****\n\n" + "\033[0m\033[0m")
 
         tasks_storage.replace(deque(new_tasks_list))

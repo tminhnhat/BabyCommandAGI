@@ -1,10 +1,10 @@
-# ⭐️Now supported Claude 3.5 Sonnet and GPT-4o⭐️
+# ⭐️Now supported Claude 3.5 Sonnet(8K output) and GPT-4o⭐️
 
 # Precautions
 
 - There is a risk of inadvertently damaging the environment. Please execute primarily in a virtual environment such as Docker.
 - The objective may not be achieved and it may continue to loop. The amount of API usage may increase in such cases, so please use responsibly.
-- It is recommended to use Claude 3.5 Sonnet or higher as it has been mainly verified with Claude 3.5 Sonnet or higher. 
+- It is recommended to use Claude 3.5 Sonnet or higher as it has been mainly verified with Claude 3.5 Sonnet or higher. (BabyCommandAGI uses the 8K output of [here](https://x.com/alexalbert__/status/1812921642143900036) when using Claude 3.5 Sonnet)
 (If you are using GPT-4 Turbo, it is recommended to use v3 of the older BabyCommandAGI.)
 
 # Objective

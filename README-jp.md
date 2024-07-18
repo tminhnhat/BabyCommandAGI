@@ -1,10 +1,10 @@
-# ⭐️Claude 3.5 SonnetとGPT-4oに対応⭐️
+# ⭐️Claude 3.5 Sonnet(8Kアウトプット)とGPT-4oに対応⭐️
 
 # 注意事項
 
 - 意図せず環境を破壊する恐れがあります。基本的にはDockerなどの仮想環境で実行してください。
 - 目的を達成できず、ループし続けることがあります。その際にAPIの使用量が多くなることがありますので、責任を持って使用してください
-- 基本的にはClaude 3.5 Sonnet以上で検証しているため、Claude 3.5 Sonnet以上の使用を推奨します
+- 基本的にはClaude 3.5 Sonnet以上で検証しているため、Claude 3.5 Sonnet以上の使用を推奨します(BabyCommandAGIではClaude 3.5 Sonnetを使用すると[こちら](https://x.com/alexalbert__/status/1812921642143900036) の8Kアウトプットが使用されます)
 (GPT-4 Turboを利用する場合は旧バージョンのBabyCommandAGIのv3を使用することを推奨します)
 
 # 目的
@@ -61,7 +61,7 @@ https://x.com/saten_work/status/1791558481432232355
     1. フィードバックを意識しつつ目的と実行履歴を元にLLMで計画し、新しいタスクリストを作成する
 
 
-![Architecture](docs/Architecture-20240718.png)
+![Architecture](docs/Architecture-20240718-2.png)
 
 # セットアップ
 

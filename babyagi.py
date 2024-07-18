@@ -682,6 +682,7 @@ def llm_call(
                         messages=messages,
                         temperature=temperature,
                         max_tokens=max_tokens,
+                        extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
                     )
                 else:
 
@@ -693,6 +694,7 @@ def llm_call(
                         messages=messages,
                         temperature=temperature,
                         max_tokens=max_tokens,
+                        extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
                     )
 
                 log(f"【USAGE】input_tokens :{response.usage.input_tokens}")

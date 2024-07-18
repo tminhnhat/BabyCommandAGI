@@ -60,7 +60,7 @@ This script works by executing the following continuous loop:
 5. If user feedback is generated:
     1. plan and create a new task list in LLM based on the OBJECTIVE and  the history of executions while being aware of feedback.
 
-![Architecture](docs/Architecture-20240718.png)
+![Architecture](docs/Architecture-20240718-2.png)
 
 # Setup
 

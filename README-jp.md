@@ -61,7 +61,7 @@ https://x.com/saten_work/status/1791558481432232355
     1. フィードバックを意識しつつ目的と実行履歴を元にLLMで計画し、新しいタスクリストを作成する
 
 
-![Architecture](docs/Architecture.png)
+![Architecture](docs/Architecture-20240718.png)
 
 # セットアップ
 

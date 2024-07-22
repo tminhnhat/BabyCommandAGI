@@ -821,7 +821,7 @@ def check_completion_agent(
 
 Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate "plan" tasks with reduced granularity.
 
-Follow the format in "Example X of tasks output" below to output next tasks. Please never output anything other than a "Example X of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
+Follow the format in "Examples of tasks output" below to output next tasks. Please never output anything other than a "Examples of tasks output" format that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
 
 Below is the result of the last execution."""
 
@@ -890,7 +890,9 @@ path: {enriched_result["target"]}"""
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
-# Example 1 of tasks output
+# Examples of tasks output
+
+## Implementation of Minesweeper
 
 type: create
 path: /workspace/requirements.txt
@@ -962,7 +964,7 @@ path: /workspace/minesweeper.py
 +#     self.board.flag_cell(row, col)
 ```
 
-# Example 2 of tasks output
+## Obtaining weather forecasts
 
 type: command
 path: /workspace/
@@ -976,7 +978,7 @@ path: /workspace/
 curl -s https://wttr.in/Tokyo
 ```
 
-# Example 3 of tasks output
+## Implementation of Flappy Bird
 
 type: command
 path: /workspace/
@@ -1213,7 +1215,7 @@ def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str):
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a best engineer.
-To achieve the "{objective}" from the following executed result states, before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output next tasks in the format of "Example X of tasks output" that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
+To achieve the "{objective}" from the following executed result states, before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output next tasks in the format of "Examples of tasks output" that always includes "type:" before ``` blocks. Please never output 'sudo' commands.
 
 # Task to be performed.
 
@@ -1231,7 +1233,9 @@ To achieve the "{objective}" from the following executed result states, before y
     prompt = TaskParser().close_open_backticks(prompt)
     prompt += """
 
-# Example 1 of tasks output
+# Examples of tasks output
+
+## Implementation of Minesweeper
 
 type: create
 path: /workspace/requirements.txt
@@ -1303,7 +1307,7 @@ path: /workspace/minesweeper.py
 +#     self.board.flag_cell(row, col)
 ```
 
-# Example 2 of tasks output
+## Obtaining weather forecasts
 
 type: command
 path: /workspace/
@@ -1317,7 +1321,7 @@ path: /workspace/
 curl -s https://wttr.in/Tokyo
 ```
 
-# Example 3 of tasks output
+## Implementation of Flappy Bird
 
 type: command
 path: /workspace/

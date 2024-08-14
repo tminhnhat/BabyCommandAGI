@@ -117,6 +117,10 @@ MAX_MARGIN_TOKEN = 200 # Allow enough tokens to avoid being on the edge
 MAX_MODEL_OUTPUT_TOKEN = 4 * 1024 # default value
 MAX_MODEL_INPUT_TOKEN = 128 * 1024 # default value
 # Maximum number of tokens is confirmed below
+# https://platform.openai.com/docs/models/gpt-4o
+MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN = 16 * 1024
+MAX_CHATGPT_4O_LATEST_INPUT_TOKEN = 128 * 1024
+# Maximum number of tokens is confirmed below
 # https://context.ai/compare/gpt-4o/claude-3-5-sonnet
 MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
 MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
@@ -272,6 +276,16 @@ elif LLM_MODEL.startswith("gpt-4"):
     log(
         "\033[91m\033[1m"
         + "\n*****USING GPT-4. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
+
+elif LLM_MODEL.startswith("chatgpt-4o-latest"):
+    MAX_MODEL_OUTPUT_TOKEN = MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN
+    MAX_MODEL_INPUT_TOKEN = MAX_CHATGPT_4O_LATEST_INPUT_TOKEN
+
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING chatgpt-4o-latest. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
         + "\033[0m\033[0m"
     )
 
@@ -466,7 +480,7 @@ def last_tokens_from_string(string: str, model: str, last: int) -> str:
         try:
             encoding = tiktoken.encoding_for_model(model)
         except:
-            encoding = tiktoken.encoding_for_model('gpt2')  # Fallback for others.
+            encoding = tiktoken.encoding_for_model('gpt-4o')  # Fallback for others.
 
     encoded = encoding.encode(string)
 
@@ -725,8 +739,6 @@ def llm_call(
                         messages=messages,
                         temperature=temperature,
                         max_tokens=max_tokens,
-                        n=1,
-                        # stop=None, for Vision API
                     )
                 else:
 
@@ -738,8 +750,6 @@ def llm_call(
                         messages=messages,
                         temperature=temperature,
                         max_tokens=max_tokens,
-                        n=1,
-                        stop=None
                     )
 
                 return response.choices[0].message.content.strip()

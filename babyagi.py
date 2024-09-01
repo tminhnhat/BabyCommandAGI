@@ -94,6 +94,7 @@ TOKEN_COUNT_MODEL = os.getenv("TOKEN_COUNT_MODEL", "claude-3-5-sonnet-20240620")
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "")
 ANTHROPIC_API_KEY= os.getenv("ANTHROPIC_API_KEY", "")
 GOOGLE_AI_STUDIO_API_KEY =  os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
 
@@ -331,7 +332,7 @@ log(f"{OBJECTIVE}")
 
 # Configure client
 anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+openai_client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_BASE)
 genai.configure(api_key=GOOGLE_AI_STUDIO_API_KEY)
 
 # Task storage supporting only a single instance of BabyAGI
@@ -717,7 +718,7 @@ def llm_call(
                 return response.content[0].text.strip()
             else:
 
-                openai_client = OpenAI(api_key=OPENAI_API_KEY)
+                openai_client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_BASE)
 
                 separated_content = separate_markdown(prompt) # for Vision API
                 if len(separated_content) > 1:

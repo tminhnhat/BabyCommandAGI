@@ -80,8 +80,8 @@ import base64
 
 #[Test]
 #TaskParser().test()
-#while True:
-#    time.sleep(100)
+while True:
+    time.sleep(100)
 
 # Engine configuration
 BABY_COMMAND_AGI_FOLDER = "/app"
